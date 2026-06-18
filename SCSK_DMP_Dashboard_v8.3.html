@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCSK-DMP 日報ダッシュボード v8.3</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+
+:root{--primary:#1a237e;--pl:#3949ab;--accent:#ff6f00;--bg:#f4f5f9;
+--card:#fff;--border:#e0e0e0;--text:#212121;--text2:#757575;--ok:#2e7d32;
+--warn:#f57f17;--danger:#c62828;--shadow:0 2px 12px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI','メイリオ',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+.header{background:linear-gradient(135deg,var(--primary) 0%,var(--pl) 100%);color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(26,35,126,.18)}
+.header h1{font-size:18px;font-weight:700;letter-spacing:-.3px;text-shadow:0 1px 3px rgba(0,0,0,.15)}.header .ver{font-size:11px;opacity:.65}
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--primary);overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.tab{padding:11px 20px;cursor:pointer;font-size:13.5px;white-space:nowrap;border-bottom:3px solid transparent;transition:all .25s ease;color:var(--text2);letter-spacing:.2px}
+.tab:hover{background:#eef0f8;color:var(--primary)}.tab.active{color:var(--primary);border-bottom-color:var(--accent);font-weight:700;background:#f8f9ff}
+.content{padding:18px;max-width:1400px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow .25s ease,transform .25s ease}
+.card:hover{box-shadow:0 4px 18px rgba(0,0,0,.10)}
+.card h3{font-size:15px;color:var(--primary);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8eaf6;letter-spacing:.3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:10px;padding:16px 14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid var(--primary);transition:all .25s ease}
+.stat:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.10)}
+.stat .val{font-size:26px;font-weight:700;color:var(--primary);letter-spacing:-.5px;text-shadow:0 1px 2px rgba(26,35,126,.06)}
+.stat .lbl{font-size:11px;color:var(--text2);margin-top:6px;letter-spacing:.3px}
+.stat.warn{border-left-color:var(--warn)}.stat.warn .val{color:var(--warn)}
+.stat.ok{border-left-color:var(--ok)}.stat.ok .val{color:var(--ok)}
+.stat.accent{border-left-color:var(--accent)}.stat.accent .val{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--primary);color:#fff;padding:10px 12px;text-align:center;font-weight:600;position:sticky;top:0;letter-spacing:.5px;font-size:12.5px}
+th:first-child{border-radius:6px 0 0 0}th:last-child{border-radius:0 6px 0 0}
+td{padding:8px 12px;border-bottom:1px solid #eee;text-align:center;transition:background .15s ease}
+tr:nth-child(even){background:#f8f9fc}tr:hover{background:#e8eaf6}
+.tbl-wrap{max-height:520px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+.bar{height:24px;border-radius:6px;background:#eee;overflow:hidden;min-width:80px}
+.bar-fill{height:100%;border-radius:6px;transition:width .6s ease}
+.bar-fill.ok{background:linear-gradient(90deg,#43a047,#66bb6a)}
+.bar-fill.warn{background:linear-gradient(90deg,#f9a825,#fdd835)}
+.bar-fill.over{background:linear-gradient(90deg,#e53935,#ef5350)}
+select,input[type=text],input[type=number],input[type=date]{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;transition:all .2s ease;background:#fff}
+select:focus,input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,35,126,.12)}
+select:hover,input:hover{border-color:#9fa8da}
+button{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .25s ease;font-weight:600}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--pl);transform:scale(1.02);box-shadow:0 3px 12px rgba(26,35,126,.2)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{opacity:.92;transform:scale(1.02);box-shadow:0 3px 12px rgba(255,111,0,.2)}
+.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filters{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;align-items:center;background:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.05);border:1px solid #eee}
+.filters label{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.2px}
+.tag{display:inline-block;padding:4px 12px;border-radius:14px;font-size:11.5px;background:#eef0f8;color:var(--primary);margin:2px;transition:all .2s ease;border:1px solid transparent}
+.tag:hover{background:#dde1f7;border-color:#c5cae9}
+.drop-zone{border:3px dashed #9fa8da;border-radius:20px;padding:56px 24px;text-align:center;background:linear-gradient(135deg,#f3f4fd,#eef0fa);transition:.3s;cursor:pointer;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.drag-over{background:linear-gradient(135deg,#dde1f7,#d1d5f0);border-color:var(--primary);transform:scale(1.01)}
+.drop-zone .icon{font-size:56px;margin-bottom:14px}.drop-zone .txt{font-size:16px;color:var(--primary);font-weight:700;letter-spacing:.3px}
+.drop-zone .sub{font-size:12px;color:var(--text2);margin-top:10px}
+.load-status{padding:12px 18px;border-radius:10px;margin-top:12px;font-size:13px;display:none;font-weight:500}
+.load-status.ok{display:block;background:#e8f5e9;color:var(--ok);border:1px solid #a5d6a7}
+.load-status.err{display:block;background:#ffebee;color:var(--danger);border:1px solid #ef9a9a}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-box{position:relative;max-height:350px}
+.worker-chip{display:inline-flex;padding:5px 14px;border-radius:18px;margin:3px;font-size:12px;background:#eef0f8;color:var(--primary);border:1px solid #c5cae9;transition:all .2s ease;font-weight:500}
+.worker-chip:hover{background:#dde1f7;transform:translateY(-1px)}
+.worker-chip.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 2px 8px rgba(26,35,126,.2)}
+.worker-chip.active:hover{background:var(--pl)}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.chart-row{grid-template-columns:1fr}.filters{flex-direction:column;align-items:stretch}}
+
+</style>
+</head>
+<body>
+<div class="header">
+<div><h1>📊 SCSK-DMP 日報ダッシュボード</h1><span class="ver">v8.3 — 1メール工数 集計修正</span></div>
+<div style="font-size:12px" id="headerInfo"></div>
+</div>
+<div class="tabs" id="tabBar">
+<div class="tab active" data-tab="0">📂 Excel読込</div>
+<div class="tab" data-tab="1">📊 日次集計</div>
+<div class="tab" data-tab="2">📈 月次集計</div>
+<div class="tab" data-tab="3">👤 個人分析</div>
+<div class="tab" data-tab="4">📋 業務別分析</div>
+<div class="tab" data-tab="5">📊 予実管理</div>
+<div class="tab" data-tab="6">✅ タスク管理</div>
+<div class="tab" data-tab="7">⚙️ 設定</div>
+<div class="tab" data-tab="8">📈 月次推移</div>
+<div class="tab" data-tab="9">📋 月次レポート転記用</div>
+</div>
+<div class="content">
+
+<!-- Tab 0: Excel読込 -->
+<div class="panel active" id="panel0">
+<div class="card">
+<h3>📂 Excelファイルを読み込む</h3>
+<div class="drop-zone" id="dropZone">
+<div class="icon">📁</div>
+<div class="txt">Excelファイルをここにドラッグ＆ドロップ</div>
+<div class="sub">または下のボタンからファイルを選択</div>
+</div>
+<div class="flex" style="justify-content:center">
+<input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+<button class="btn-primary" id="btnFile">📂 ファイルを選択</button>
+<button class="btn-accent" id="btnDemo">📊 デモデータで表示</button>
+<!-- <button class="btn-primary" onclick="loadFromUrl()">🌐 共有データ読込</button> -->
+</div>
+<div class="load-status" id="loadStatus"></div>
+</div>
+<div id="dataSummary"></div>
+</div>
+
+<!-- Tab 1 -->
+<div class="panel" id="panel1">
+<div class="filters">
+<label>📅 日付: <input type="date" id="fDate"></label>
+<label>👤 作業者: <select id="fWorkerDaily"><option value="">全員</option></select></label>
+</div>
+<div class="stats" id="dailyStats"></div>
+<div class="chart-row">
+<div class="card"><h3>🍩 業務カテゴリ内訳</h3><div class="chart-box"><canvas id="dailyDonut"></canvas></div></div>
+<div class="card"><h3>📊 作業者別 作業時間</h3><div class="chart-box"><canvas id="dailyBar"></canvas></div></div>
+</div>
+<div class="card"><h3>📋 作業一覧</h3><div class="tbl-wrap" id="dailyTable"></div></div>
+</div>
+
+<!-- Tab 2 -->
+<div class="panel" id="panel2">
+<div class="filters"><label>📅 月: <select id="fMonth"></select></label></div>
+<div class="stats" id="monthlyStats"></div>
+<div class="chart-row">
+<div class="card"><h3>📊 業務カテゴリ別工数</h3><div class="chart-box"><canvas id="monthlyBar"></canvas></div></div>
+<div class="card"><h3>🍩 構成比</h3><div class="chart-box"><canvas id="monthlyPie"></canvas></div></div>
+</div>
+<div class="card"><h3>📋 月次報告カテゴリ × サブカテゴリ × 業務カテゴリ × 作業 内訳</h3><div class="tbl-wrap" id="monthlyBreakdownTable"></div></div><div class="card"><h3>📊 日別×作業者 稼働時間</h3><div class="tbl-wrap" id="monthlyDailyTable"></div></div>
+<div class="card"><h3>📈 日別推移チャート</h3><div class="chart-box" style="max-height:400px"><canvas id="monthlyLineChart"></canvas></div></div>
+</div>
+
+<!-- Tab 3 -->
+<div class="panel" id="panel3">
+<div class="filters">
+<label>👤 作業者: <select id="fWorkerP"><option value="">全員</option></select></label>
+<label>📅 月: <select id="fMonthP"></select></label>
+</div>
+<div class="stats" id="personalStats"></div>
+<div class="chart-row">
+<div class="card"><h3>🍩 業務カテゴリ内訳</h3><div class="chart-box"><canvas id="personalDonut"></canvas></div></div>
+<div class="card"><h3>📊 日別稼働時間</h3><div class="chart-box"><canvas id="personalBar"></canvas></div></div>
+</div>
+<div class="card"><h3>📋 業務別詳細</h3><div class="tbl-wrap" id="personalTable"></div></div>
+</div>
+
+<!-- Tab 4 -->
+<div class="panel" id="panel4">
+<div class="filters">
+<label>📋 業務: <select id="fBiz"><option value="">全業務</option></select></label>
+<label>📅 月: <select id="fMonthBiz"></select></label>
+</div>
+<div class="stats" id="bizStats"></div>
+<div class="chart-row">
+<div class="card"><h3>📊 業務カテゴリ別工数 Top15</h3><div class="chart-box"><canvas id="bizBar"></canvas></div></div>
+<div class="card"><h3>🍩 構成比</h3><div class="chart-box"><canvas id="bizPie"></canvas></div></div>
+</div>
+<div class="card"><h3>📋 作業別詳細</h3><div class="tbl-wrap" id="bizDetailTable"></div></div>
+</div>
+
+<!-- Tab 5 -->
+<div class="panel" id="panel5">
+<div class="filters"><label>📅 月: <select id="fMonthPV"></select></label></div>
+<div class="stats" id="pvStats"></div>
+<div class="chart-row">
+<div class="card"><h3>📊 カテゴリ別 予定 vs 実績</h3><div class="chart-box"><canvas id="pvBar"></canvas></div></div>
+<div class="card"><h3>🍩 予定構成比</h3><div class="chart-box"><canvas id="pvDonut"></canvas></div></div>
+</div>
+<div class="card"><h3>📋 カテゴリ別 予実比較</h3><div class="tbl-wrap" id="pvTable"></div></div>
+<div class="card"><h3>📋 作業別 予実詳細</h3><div class="tbl-wrap" id="pvDetailTable"></div></div>
+</div>
+
+<!-- Tab 6 -->
+<div class="panel" id="panel6">
+<div class="filters"><label>📅 月: <select id="fMonthTask"></select></label></div>
+<div class="card"><h3>✅ タスク進捗サマリー</h3><div class="stats" id="taskStats"></div></div>
+<div class="card"><h3>📊 業務カテゴリ × 作業者 マトリクス</h3><div class="tbl-wrap" id="taskMatrix"></div></div>
+</div>
+
+<!-- Tab 7 -->
+<div class="panel" id="panel7">
+<div class="card"><h3>⚙️ 現在の設定</h3><div id="settingsView"></div></div>
+<div class="card"><h3>📋 業務マスタ</h3><div class="tbl-wrap" id="masterView"></div></div>
+<div class="card"><h3>👤 担当者一覧</h3><div id="workerView"></div></div>
+</div>
+
+<!-- Tab 8: 月次レポート -->
+<div class="panel" id="panel8">
+<div class="stats" id="mrStats"></div>
+<div class="card"><h3>📋 月次レポート — 工数実績（2026年度）</h3>
+<div class="tbl-wrap" style="max-height:620px" id="mrTable"></div></div>
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px">
+<div class="card"><h3>📊 カテゴリ別構成比</h3><div style="max-width:380px;margin:auto"><canvas id="mrPieChart"></canvas></div></div>
+<div class="card"><h3>📈 月次推移（実績 vs 契約工数）</h3><canvas id="mrLineChart" height="280"></canvas></div>
+</div>
+</div>
+
+<!-- Tab 9: 月次レポート転記用 -->
+
+<div class="panel" id="panel9">
+
+  <!-- ① フィルタ -->
+  <div class="filters">
+    <label>📅 対象月: <select id="fMonthReport"></select></label>
+
+    <label style="margin-left:20px">
+      📧 当月配信件数:
+      <input type="number" id="inputDeliveryCount" style="width:100px">
+    </label>
+  </div>
+
+  <!-- ✅ ここに移動（超重要） -->
+  <div class="stats" id="rtStats"></div>
+
+  <!-- ② 上の表 -->
+  <div class="card">
+    <h3>📋 月次レポート転記用</h3>
+    <div class="tbl-wrap" style="max-height:620px" id="rtTable"></div>
+  </div>
+
+  <!-- ③ 下の表 -->
+  <div class="card">
+    <h3>※1メール当たりの工数/分</h3>
+    <div id="rtPerMailTable" style="padding:12px;color:#757575">
+      配信件数を入力してください
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+// Global State (identical to v7.2)
+let G={entries:[],master:{},workers:[],settings:{},plan:{},planTask:{},deliveryCounts:{},loaded:false};
+
+// ====== TASK_MAP (Excel 業務→月次報告カテゴリ マッピング) ======
+const TASK_MAP = {
+  "週次報告会": {
+    "週次報告会": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "週次報告会以外のスポットMtg": {
+    "週次報告会以外のスポットMtg": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "定例会_顧客情報基盤活動": {
+    "NS定例": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "レポート作成・資料作成": {
+    "月次報告書作成": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "アカウントレポート作成": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "週次報告書作成": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "その他(備考に記載)": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "窓口対応_dmp_all_ML": {
+    "窓口対応(dmp-all：ML)": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "窓口対応(Teams、チャット流入)": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "窓口対応(事例・広報対応)": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "SCSKメール運用": {
+    "予約システム管理": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "予約システム管理"
+    },
+    "グループ会社メール予約対応": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "予約対応"
+    },
+    "予約確認メール(対現場)": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "予約対応"
+    },
+    "配信コンテンツ調整(優先度決定)": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "配信コンテンツ調整"
+    },
+    "メールテンプレート作成": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "メールテンプレート作成"
+    },
+    "メールテンプレートWチェック": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "Wチェック"
+    },
+    "検索条件作成": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "検索条件作成"
+    },
+    "検索条件Wチェック": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "Wチェック"
+    },
+    "テスト送付・修正対応": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "メールテンプレート作成"
+    },
+    "送信ウィザード設定": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "送信設定"
+    },
+    "送信ウィザードWチェック": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "Wチェック"
+    },
+    "配信結果公開・リスト反映": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "予約システム管理"
+    },
+    "依頼元とのメールやりとり": {
+      "top": "DMPメール",
+      "sub": "通常",
+      "mail": "依頼部署とのやりとり"
+    },
+    "【イレギュラー対応】メールテンプレート作成": {
+      "top": "DMPメール",
+      "sub": "イレギュラー対応",
+      "mail": "メールテンプレート作成"
+    },
+    "【イレギュラー対応】検索条件作成": {
+      "top": "DMPメール",
+      "sub": "イレギュラー対応",
+      "mail": "検索条件作成"
+    },
+    "【イレギュラー対応】依頼元とのメールやりとり": {
+      "top": "DMPメール",
+      "sub": "イレギュラー対応",
+      "mail": "依頼部署とのやりとり"
+    },
+    "【イレギュラー対応】テスト送付・修正対応": {
+      "top": "DMPメール",
+      "sub": "イレギュラー対応",
+      "mail": "メールテンプレート作成"
+    },
+    "【企画本部】メールコンテンツ検討": {
+      "top": "DMPメール",
+      "sub": "企画部メール",
+      "mail": "予備メルマガ作成"
+    },
+    "【企画本部】メールテンプレート作成": {
+      "top": "DMPメール",
+      "sub": "企画部メール",
+      "mail": "予備メルマガ作成"
+    }
+  },
+  "ハウスリスト管理_シャノン": {
+    "リスト抽出": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "名寄せ・リード追加・更新": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "重点顧客_144社_リスト更新": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "申込者情報クレンジング・リード取込": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "削除されたリードの復活防止対応": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "リード削除のための事前調査": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "リード削除用リスト作成": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "リード削除作業": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "既存取引先リードフラグ更新": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "リードクレンジング": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "COMPASSページ更新(ハウスリスト状況集計・発信)": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "シャノン運用管理": {
+    "シャノン権限付与": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "アカウント追加変更・棚卸": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "MA_シャノンフォーム管理_scsk.jp": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "API連携": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "シャノン上の設定変更": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "配信停止一覧の展開": {
+    "配信停止一覧メール展開": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "顧客情報基盤活動": {
+    "新着リード棚卸、設定更新": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "エクスポート対応": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "個別依頼作業": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "通知メールテンプレート差し替え": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "運用改善": {
+    "業務フロー・明文化対象の洗い出し": {
+      "top": "業務改善",
+      "sub": "業務改善",
+      "mail": ""
+    },
+    "メール運用のオペレーション見直し": {
+      "top": "業務改善",
+      "sub": "業務改善",
+      "mail": ""
+    },
+    "業務効率化検討": {
+      "top": "業務改善",
+      "sub": "業務改善",
+      "mail": ""
+    },
+    "AI活用検討": {
+      "top": "業務改善",
+      "sub": "業務改善",
+      "mail": ""
+    },
+    "ツール利用検討": {
+      "top": "業務改善",
+      "sub": "業務改善",
+      "mail": ""
+    },
+    "運用ルール改善": {
+      "top": "業務改善",
+      "sub": "業務改善",
+      "mail": ""
+    }
+  },
+  "システム構築・修正": {
+    "ツール調査": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "仕様検討": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "要件定義": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "テストアプリ実装": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "テストアプリ動作確認": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "テストアプリ・レビュー": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "本番環境へ実装": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "本番環境動作確認": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "リリース前・レビュー": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    },
+    "アプリ修正対応": {
+      "top": "システム導入・改修",
+      "sub": "予約フォーム改修",
+      "mail": ""
+    }
+  },
+  "COMPASSページ運用": {
+    "手続き・ガイド・ルール策定": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "運用ルールの設定・可視化": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "Compass掲載内容の検討": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "Compass掲載内容のモックの作成": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "原稿案作成": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "レビュー① 原稿レビュー": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "レビュー② 部長原稿レビュー": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "Compass更新作業": {
+      "top": "COMPASSページ運用",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "ソリューション営業の案件化支援策": {
+    "SMPからのリードダウンロード": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "営業要望ヒアリング": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "要望に基づくレポート等施策検討": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    },
+    "ターゲットリスト調査": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "メール高度化・改善": {
+    "SCSK-DMPメールの改善(送信増・トラッキング増・CV)": {
+      "top": "DMPメール",
+      "sub": "定型業務",
+      "mail": ""
+    }
+  },
+  "ルール明文化": {
+    "【言語化】メールアドレスクレンジング作業(日々のマージ・クレンジング)": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】予約対応": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】グループ会社メール予約対応": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】予約確認メール(対現場)": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】配信コンテンツ調整(優先度決定)": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】配信数調査・確定": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】配信設定": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】配信結果連携": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】削除済リードの定期": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】配信停止・登録変更": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】問い合わせ対応": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】ソリューション・アカウント作成マニュアル": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】HTMLメール作成マニュアル": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】リード削除作業": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    },
+    "【言語化】通知メール": {
+      "top": "運用ルール策定",
+      "sub": "運用ルール策定",
+      "mail": ""
+    }
+  },
+  "追加業務": {
+    "営業通知のリニューアル": {
+      "top": "追加業務",
+      "sub": "追加業務",
+      "mail": ""
+    },
+    "AI伴走テスト": {
+      "top": "追加業務",
+      "sub": "追加業務",
+      "mail": ""
+    }
+  }
+};
+
+// 正規化: 空白・全角空白・記号類を除去して比較用キーに
+function normStr(s){
+  return (s||'').toString().replace(/[\s\u3000\u00A0、，,。．・\-_／\/（）()【】「」]+/g,'').toLowerCase();
+}
+
+// 事前計算: 正規化キーによる索引 + 業務カテゴリの代表 top/sub
+const TASK_MAP_NORM = {};
+const BIZ_DOMINANT = {};
+(function(){
+  for(const biz in TASK_MAP){
+    const nb = normStr(biz);
+    if(!TASK_MAP_NORM[nb]) TASK_MAP_NORM[nb] = {};
+    const counts = {};
+    let firstVal = null;
+    for(const task in TASK_MAP[biz]){
+      const v = TASK_MAP[biz][task];
+      TASK_MAP_NORM[nb][normStr(task)] = v;
+      const ck = v.top+'|||'+v.sub;
+      counts[ck] = (counts[ck]||0)+1;
+      if(!firstVal) firstVal = v;
+    }
+    let best=null,bestN=0;
+    for(const k in counts){ if(counts[k]>bestN){bestN=counts[k];best=k;} }
+    if(best){
+      const parts = best.split('|||');
+      BIZ_DOMINANT[nb] = {top:parts[0], sub:parts[1], mail:''};
+    } else if(firstVal){
+      BIZ_DOMINANT[nb] = {top:firstVal.top, sub:firstVal.sub, mail:''};
+    }
+  }
+})();
+
+function categorize(biz, task){
+  if(!biz) return {top:'その他', sub:'その他', mail:''};
+  // 1. 完全一致
+  if(TASK_MAP[biz] && TASK_MAP[biz][task]) return TASK_MAP[biz][task];
+  const nb = normStr(biz), nt = normStr(task);
+  // 2. 正規化キーで完全一致
+  if(TASK_MAP_NORM[nb] && TASK_MAP_NORM[nb][nt]) return TASK_MAP_NORM[nb][nt];
+  // 3. 業務カテゴリ単位で一致(作業が未登録でも、bizの代表分類を使う)
+  if(BIZ_DOMINANT[nb]) return BIZ_DOMINANT[nb];
+  // 4. 部分一致(biz名の前方・包含一致)
+  if(nb.length>=2){
+    for(const k in BIZ_DOMINANT){
+      if(k.length>=2 && (nb.indexOf(k)>=0 || k.indexOf(nb)>=0)){
+        return BIZ_DOMINANT[k];
+      }
+    }
+  }
+  // 5. その他に集約
+  return {top:'その他', sub:'その他', mail:''};
+}
+let charts={};
+const COLORS=['#1a237e','#283593','#3949ab','#5c6bc0','#7986cb','#9fa8da',
+'#ff6f00','#ff8f00','#ffa000','#43a047','#66bb6a','#26a69a','#ec407a','#ab47bc','#5c6bc0','#78909c'];
+const WORKER_COLORS=['#1a237e','#ff6f00','#2e7d32','#c62828','#6a1b9a','#00838f','#4e342e','#d81b60'];
+
+function makeChart(id,cfg){if(charts[id])charts[id].destroy();const ctx=document.getElementById(id);if(!ctx)return null;charts[id]=new Chart(ctx,cfg);return charts[id];}
+
+document.getElementById('tabBar').addEventListener('click',e=>{
+  const t=e.target.closest('.tab');if(!t)return;const idx=t.dataset.tab;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');document.getElementById('panel'+idx).classList.add('active');
+  if(G.loaded)renderTab(+idx);
+});
+function renderTab(i){switch(i){case 1:renderDaily();break;case 2:renderMonthly();break;case 3:renderPersonal();break;
+  case 4:renderBiz();break;case 5:renderPV();break;case 6:renderTask();break;case 7:renderSettings();break;case 8:renderMonthlyReport();break;case 9:renderReportTransfer();break;}}
+
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput'),loadStatus=document.getElementById('loadStatus');
+document.getElementById('btnFile').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{if(e.target.files[0])loadExcel(e.target.files[0]);});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');if(e.dataTransfer.files[0])loadExcel(e.dataTransfer.files[0]);});
+document.getElementById('btnDemo').addEventListener('click',loadDemo);
+
+function loadExcel(file){
+  const reader=new FileReader();
+  reader.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+    parseWorkbook(wb);showSt('ok',`✅ 読込完了: ${file.name} — ${G.entries.length}件`);afterLoad();
+  }catch(err){showSt('err','❌ エラー: '+err.message);}};
+  reader.readAsArrayBuffer(file);
+}
+
+function parseWorkbook(wb){
+  const wsD=wb.Sheets['日報入力'];
+
+if(wsD){
+  const rows=XLSX.utils.sheet_to_json(wsD,{defval:''});
+
+
+
+
+
+G.entries = rows.map(r=>{
+  let dt = r['日付'] || Object.values(r)[0];
+
+  if(dt instanceof Date) dt = fmtD(dt);
+  else if(typeof dt === 'number') dt = fmtD(new Date((dt-25569)*86400000));
+  
+else {
+  const d = new Date(dt);
+  if (!isNaN(d)) {
+    dt = fmtD(d); // ← 正規フォーマットに変換
+  } else {
+    dt = String(dt).slice(0,10);
+  }
+}
+
+
+  return {
+    date: dt,
+    worker: String(r['作業者'] || ''),
+    biz: String(r['業務'] || ''),
+    task: String(r['作業'] || ''),
+    note: String(r['備考'] || r['備考（スポットやイレギュラータスク発生時に内容記載）'] || ''),
+    hours: parseFloat(r['作業時間(h)'] || r['作業時間'] || 0) || 0,
+
+    
+    
+  };
+
+}).filter(e=>{
+  const ok = e.worker && e.biz;
+
+ 
+
+  return ok;
+});
+}
+
+
+
+  const wsM=wb.Sheets['業務マスタ'];
+  if(wsM){const rows=XLSX.utils.sheet_to_json(wsM,{defval:''});G.master={};
+    rows.forEach(r=>{const c=r['業務カテゴリ']||'',t=r['作業名']||'';if(c&&t){if(!G.master[c])G.master[c]=[];G.master[c].push(t);}});}
+  const wsW=wb.Sheets['担当者マスタ'];
+  if(wsW){const rows=XLSX.utils.sheet_to_json(wsW,{defval:''});G.workers=rows.map(r=>r['担当者名']).filter(Boolean);}
+  const wsS=wb.Sheets['設定'];
+  if(wsS){const rows=XLSX.utils.sheet_to_json(wsS,{defval:''});G.settings={};rows.forEach(r=>{if(r['設定項目'])G.settings[r['設定項目']]=r['設定値'];});}
+  const wsP=wb.Sheets['月次計画'];
+  if(wsP){
+    const raw=XLSX.utils.sheet_to_json(wsP,{header:1,defval:''});
+    G.plan={};G.planTask={};
+    let hdrIdx=-1;
+    for(let i=0;i<Math.min(raw.length,5);i++){if(raw[i]&&String(raw[i][0]).includes('業務')&&String(raw[i][1]).includes('作業')){hdrIdx=i;break;}}
+    if(hdrIdx===-1)hdrIdx=1;
+    const hdr=raw[hdrIdx];const monthCols={};
+    for(let ci=2;ci<hdr.length-1;ci++){
+      const ml=String(hdr[ci]).replace(/\s/g,'');
+      const mm=({'4月':'2026-04','5月':'2026-05','6月':'2026-06','7月':'2026-07','8月':'2026-08','9月':'2026-09',
+        '10月':'2026-10','11月':'2026-11','12月':'2026-12','1月':'2027-01','2月':'2027-02','3月':'2027-03'})[ml];
+      if(mm)monthCols[ci]=mm;
+    }
+    for(let i=hdrIdx+1;i<raw.length;i++){
+      const row=raw[i];if(!row||!row[0])continue;
+      const cat=String(row[0]).trim(),task=String(row[1]||'').trim();
+      if(!cat||cat==='合計'||task==='合計'||task==='契約工数'||task==='差異（残）'||task==='計画充足率'||task==='小計')continue;
+      if(task==='')continue;
+      for(const[ci,ym] of Object.entries(monthCols)){
+        const v=parseFloat(row[+ci])||0;if(v===0)continue;
+        if(!G.plan[ym])G.plan[ym]={};if(!G.plan[ym][cat])G.plan[ym][cat]=0;G.plan[ym][cat]+=v;
+        const tk=cat+'|||'+task;if(!G.planTask[ym])G.planTask[ym]={};if(!G.planTask[ym][tk])G.planTask[ym][tk]=0;G.planTask[ym][tk]+=v;
+      }
+    }
+  }
+  if(!G.workers.length)G.workers=[...new Set(G.entries.map(e=>e.worker))];
+  if(!Object.keys(G.master).length)G.entries.forEach(e=>{if(e.biz){if(!G.master[e.biz])G.master[e.biz]=[];if(e.task&&!G.master[e.biz].includes(e.task))G.master[e.biz].push(e.task);}});
+  if(!G.settings.contractHours)G.settings.contractHours=239;
+}
+
+function afterLoad(){G.loaded=true;populateFilters();renderDataSummary();
+  document.getElementById('headerInfo').textContent=`${G.entries.length}件 | ${G.workers.join(', ')} | 契約${G.settings.contractHours}h`;}
+function showSt(t,m){loadStatus.className='load-status '+t;loadStatus.textContent=m;}
+
+function loadDemo(){
+}
+  // ✅ SharePoint / URLからExcel読込
+//async function loadFromUrl(){
+//  try{
+//    const url = "https://scskinfo.sharepoint.com/sites/msteams_ab6000/Shared%20Documents/日報入力テンプレート.xlsx?download=1";
+//
+//    const res = await fetch(url);
+//    const data = await res.arrayBuffer();
+//
+//    const wb = XLSX.read(data, { type:'array' });
+//    parseWorkbook(wb);
+//
+//    showSt('ok','✅ 共有ファイル読込完了');
+//    afterLoad();
+//
+//  }catch(err){
+//    showSt('err','❌ URL読込エラー: ' + err.message);
+//  }
+//}
+
+  const BT={'SCSKメール運用':['予約システム管理','メールテンプレート作成','検索条件作成','テスト送付・修正対応','送信ウィザード設定','配信結果公開・リスト反映','依頼元とのメールやりとり'],
+  'レポート作成・資料作成':['月次報告書作成','週次報告書作成','アカウントレポート作成'],
+  'ハウスリスト管理_シャノン':['リードクレンジング','既存取引先リードフラグ更新','名寄せ・リード追加・更新'],
+  '窓口対応_dmp_all_ML':['窓口対応（dmp-all：ML）','窓口対応（Teams、チャット流入）'],
+  '週次報告会':['週次報告会'],'運用改善':['業務効率化検討','AI活用検討'],
+  '追加業務':['営業通知のリニューアル','AI伴走テスト']};
+  G.master=BT;G.workers=['竹前','渡','前中'];
+  G.settings={contractHours:239,projectName:'SCSK-DMP運用'};
+  G.entries=[];const cats=Object.keys(BT);
+  G.plan={'2026-04':{'SCSKメール運用':100,'レポート作成・資料作成':30,'ハウスリスト管理_シャノン':40,
+    '窓口対応_dmp_all_ML':15,'週次報告会':12,'運用改善':22,'追加業務':20}};
+  G.planTask={'2026-04':{}};
+  for(const[c,ts] of Object.entries(BT)){const ph=(G.plan['2026-04'][c]||0)/ts.length;
+    ts.forEach(t=>{G.planTask['2026-04'][c+'|||'+t]=Math.round(ph*10)/10;});}
+  for(let d=1;d<=22;d++){const dd=String(d).padStart(2,'0');const dow=new Date(2026,3,d).getDay();
+    if(dow===0||dow===6)continue;
+    G.workers.forEach(w=>{const n=4+Math.floor(Math.random()*5);
+      for(let i=0;i<n;i++){const cat=cats[Math.floor(Math.random()*cats.length)];const ts=BT[cat];
+        G.entries.push({date:'2026-04-'+dd,worker:w,biz:cat,task:ts[Math.floor(Math.random()*ts.length)],note:'',hours:+(0.1+Math.random()*1.8).toFixed(2)});}});}
+  showSt('ok',`✅ デモデータ読込完了: ${G.entries.length}件`);afterLoad();
+
+
+function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function sum(a){return a.reduce((s,x)=>s+x,0);}
+function uniq(a){return[...new Set(a)];}
+function grp(a,fn){const m={};a.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])).push(x);});return m;}
+function pct(a,b){return b?(a/b*100).toFixed(1)+'%':'—';}
+function getMonths(){return uniq(G.entries.map(e=>e.date.slice(0,7))).sort();}
+function getDates(m){return uniq(G.entries.filter(e=>e.date.slice(0,7)===m).map(e=>e.date)).sort();}
+function fe(o){let e=G.entries;if(o.month)e=e.filter(x=>x.date.slice(0,7)===o.month);
+  if(o.date)e=e.filter(x=>x.date===o.date);if(o.worker)e=e.filter(x=>x.worker===o.worker);
+  if(o.biz)e=e.filter(x=>x.biz===o.biz);return e;}
+
+function populateFilters(){
+  const ms=getMonths(),lm=ms[ms.length-1]||'',ds=getDates(lm);
+  const planMs=Object.keys(G.plan||{}).sort();const allMs=uniq([...ms,...planMs]).sort();
+  ['fMonth','fMonthP','fMonthBiz','fMonthTask','fMonthPV','fMonthReport'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;const src=id==='fMonthPV'?allMs:ms;
+    s.innerHTML=src.map(m=>`<option value="${m}"${m===lm?' selected':''}>${m}</option>`).join('');});
+  ['fWorkerDaily'].forEach(id=>{const s=document.getElementById(id);if(!s)return;
+    s.innerHTML='<option value="">全員</option>'+G.workers.map(w=>`<option value="${w}">${w}</option>`).join('');});
+  ['fWorkerP'].forEach(id=>{const s=document.getElementById(id);if(!s)return;
+    s.innerHTML='<option value="">全員</option>'+G.workers.map(w=>`<option value="${w}">${w}</option>`).join('');});
+  const fd=document.getElementById('fDate');if(fd&&ds.length)fd.value=ds[ds.length-1];
+  const fb=document.getElementById('fBiz');
+  if(fb)fb.innerHTML='<option value="">全業務</option>'+Object.keys(G.master).map(b=>`<option value="${b}">${b}</option>`).join('');
+  ['fDate','fWorkerDaily'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderDaily()));
+  ['fMonth'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderMonthly()));
+  ['fWorkerP','fMonthP'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderPersonal()));
+  ['fBiz','fMonthBiz'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderBiz()));
+  ['fMonthTask'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderTask()));
+  ['fMonthPV'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderPV()));
+  ['fMonthReport'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>renderReportTransfer()));
+}
+
+function renderDataSummary(){const el=document.getElementById('dataSummary');const ms=getMonths(),th=sum(G.entries.map(e=>e.hours));
+  const dr=G.entries.length?G.entries[0].date+' 〜 '+G.entries[G.entries.length-1].date:'—';const planMs=Object.keys(G.plan||{});
+  el.innerHTML=`<div class="stats">
+    <div class="stat"><div class="val">${G.entries.length}</div><div class="lbl">総エントリ数</div></div>
+    <div class="stat accent"><div class="val">${th.toFixed(2)}</div><div class="lbl">総作業時間(h)</div></div>
+    <div class="stat"><div class="val">${G.workers.length}</div><div class="lbl">作業者数</div></div>
+    <div class="stat"><div class="val">${Object.keys(G.master).length}</div><div class="lbl">業務カテゴリ数</div></div>
+    <div class="stat ok"><div class="val">${planMs.length}</div><div class="lbl">月次計画あり</div></div>
+  </div>
+  <div class="card"><h3>📅 データ範囲</h3><p>${dr}（${ms.length}ヶ月分）</p>
+  <div style="margin-top:8px">${G.workers.map(w=>`<span class="worker-chip active">${w}</span>`).join('')}</div></div>`;}
+
+function renderDaily(){const d=document.getElementById('fDate')?.value||'',w=document.getElementById('fWorkerDaily')?.value||'';
+  const entries=fe({date:d,worker:w}),th=sum(entries.map(e=>e.hours));
+  const byW=grp(entries,e=>e.worker),byB=grp(entries,e=>e.biz);
+  document.getElementById('dailyStats').innerHTML=`
+    <div class="stat"><div class="val">${entries.length}</div><div class="lbl">エントリ数</div></div>
+    <div class="stat accent"><div class="val">${th.toFixed(2)}</div><div class="lbl">合計時間(h)</div></div>
+    <div class="stat"><div class="val">${Object.keys(byW).length}</div><div class="lbl">作業者数</div></div>
+    <div class="stat"><div class="val">${Object.keys(byB).length}</div><div class="lbl">業務カテゴリ数</div></div>`;
+  const bData=Object.entries(byB).map(([b,es])=>({l:b,v:sum(es.map(e=>e.hours))})).sort((a,b)=>b.v-a.v);
+  makeChart('dailyDonut',{type:'doughnut',data:{labels:bData.map(d=>d.l),datasets:[{data:bData.map(d=>d.v),backgroundColor:COLORS}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11}}}}}});
+  const wData=Object.entries(byW).map(([w,es])=>({l:w,v:sum(es.map(e=>e.hours))})).sort((a,b)=>b.v-a.v);
+  makeChart('dailyBar',{type:'bar',data:{labels:wData.map(d=>d.l),datasets:[{label:'作業時間(h)',data:wData.map(d=>d.v),backgroundColor:COLORS}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+  let t='<table><tr><th>作業者</th><th>業務</th><th>作業</th><th>時間(h)</th><th>備考</th></tr>';
+  entries.forEach(e=>{t+=`<tr><td>${e.worker}</td><td style="text-align:left">${e.biz}</td><td style="text-align:left">${e.task}</td><td>${e.hours.toFixed(2)}</td><td style="text-align:left;font-size:11px">${e.note}</td></tr>`;});
+  t+=`<tr style="font-weight:700;background:#e8eaf6"><td colspan="3">合計</td><td>${th.toFixed(2)}</td><td></td></tr></table>`;
+  document.getElementById('dailyTable').innerHTML=t;}
+
+function renderMonthly(){const m=document.getElementById('fMonth')?.value||getMonths().pop()||'';
+  const entries=fe({month:m}),th=sum(entries.map(e=>e.hours)),ct=+G.settings.contractHours||239;
+  const ratio=th/ct,remain=ct-th,byB=grp(entries,e=>categorize(e.biz,e.task).top),dates=getDates(m),ws=G.workers;
+  document.getElementById('monthlyStats').innerHTML=`
+    <div class="stat"><div class="val">${th.toFixed(2)}</div><div class="lbl">実績工数(h)</div></div>
+    <div class="stat"><div class="val">${ct}</div><div class="lbl">契約工数(h)</div></div>
+    <div class="stat ${ratio>1?'warn':'ok'}"><div class="val">${pct(th,ct)}</div><div class="lbl">消化率</div></div>
+    <div class="stat ${remain<0?'warn':''}"><div class="val">${remain.toFixed(2)}</div><div class="lbl">残時間(h)</div></div>
+    <div class="stat"><div class="val">${dates.length}</div><div class="lbl">稼働日数</div></div>`;
+  const bData=Object.entries(byB).map(([b,es])=>({l:b,v:sum(es.map(e=>e.hours))})).sort((a,b)=>b.v-a.v);
+  makeChart('monthlyBar',{type:'bar',data:{labels:bData.map(d=>d.l),datasets:[{label:'工数(h)',data:bData.map(d=>d.v),backgroundColor:COLORS}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+  makeChart('monthlyPie',{type:'pie',data:{labels:bData.map(d=>d.l),datasets:[{data:bData.map(d=>d.v),backgroundColor:COLORS}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10}}}}}});
+  // ===== 月次報告カテゴリ × サブカテゴリ × 業務 × 作業 内訳テーブル =====
+  {
+    const buckets={};
+    entries.forEach(e=>{
+      const c=categorize(e.biz,e.task);
+      const k=c.top+'|||'+c.sub+'|||'+e.biz+'|||'+e.task;
+      if(!buckets[k])buckets[k]={top:c.top,sub:c.sub,biz:e.biz,task:e.task,h:0,n:0};
+      buckets[k].h+=e.hours;buckets[k].n+=1;
+    });
+    const rows=Object.values(buckets).sort((a,b)=>{
+      if(a.top!==b.top)return a.top.localeCompare(b.top,'ja');
+      if(a.sub!==b.sub)return a.sub.localeCompare(b.sub,'ja');
+      if(a.biz!==b.biz)return a.biz.localeCompare(b.biz,'ja');
+      return b.h-a.h;
+    });
+    let bt='<table><tr><th>月次報告カテゴリ</th><th>サブカテゴリ</th><th>業務カテゴリ</th><th>作業</th><th>工数(h)</th><th>構成比</th><th>件数</th></tr>';
+    let prevTop='',prevSub='',prevBiz='';
+    rows.forEach(r=>{
+      const topD=r.top!==prevTop?r.top:'';
+      const subD=(r.top!==prevTop||r.sub!==prevSub)?r.sub:'';
+      const bizD=(r.top!==prevTop||r.sub!==prevSub||r.biz!==prevBiz)?r.biz:'';
+      prevTop=r.top;prevSub=r.sub;prevBiz=r.biz;
+      bt+=`<tr><td style="text-align:left;font-weight:${topD?'600':'400'};color:${topD?'var(--primary)':'#aaa'}">${topD||'\u3000'}</td>`+
+          `<td style="text-align:left;color:${subD?'#333':'#aaa'}">${subD||'\u3000'}</td>`+
+          `<td style="text-align:left;color:${bizD?'#333':'#aaa'}">${bizD||'\u3000'}</td>`+
+          `<td style="text-align:left">${r.task}</td>`+
+          `<td>${r.h.toFixed(2)}</td><td>${pct(r.h,th)}</td><td>${r.n}</td></tr>`;
+    });
+    const topTotals={};rows.forEach(r=>{topTotals[r.top]=(topTotals[r.top]||0)+r.h;});
+    bt+='</table>';
+    let summary='<table style="margin-bottom:12px"><tr><th>月次報告カテゴリ</th><th>合計(h)</th><th>構成比</th></tr>';
+    Object.entries(topTotals).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+      summary+=`<tr><td style="text-align:left;font-weight:600">${k}</td><td>${v.toFixed(2)}</td><td>${pct(v,th)}</td></tr>`;
+    });
+    summary+=`<tr style="font-weight:700;background:#e8eaf6"><td>合計</td><td>${th.toFixed(2)}</td><td>100.0%</td></tr></table>`;
+    document.getElementById('monthlyBreakdownTable').innerHTML=summary+bt;
+  }
+  const byDate=grp(entries,e=>e.date);
+  let dt='<table><tr><th>日付</th>';ws.forEach(w=>{dt+=`<th>${w}</th>`;});dt+='<th>合計</th></tr>';
+  dates.forEach(d=>{dt+=`<tr><td>${d.slice(5)}</td>`;let s=0;
+    ws.forEach(w=>{const h=sum((byDate[d]||[]).filter(e=>e.worker===w).map(e=>e.hours));s+=h;dt+=`<td>${h?h.toFixed(2):''}</td>`;});
+    dt+=`<td style="font-weight:700">${s.toFixed(2)}</td></tr>`;});dt+='</table>';document.getElementById('monthlyDailyTable').innerHTML=dt;
+  const datasets=ws.map((w,i)=>({label:w,data:dates.map(d=>sum((byDate[d]||[]).filter(e=>e.worker===w).map(e=>e.hours))),
+    borderColor:WORKER_COLORS[i%WORKER_COLORS.length],backgroundColor:WORKER_COLORS[i%WORKER_COLORS.length]+'33',borderWidth:2.5,pointRadius:4,fill:false,tension:.3}));
+  makeChart('monthlyLineChart',{type:'line',data:{labels:dates.map(d=>d.slice(5)),datasets},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}},plugins:{legend:{position:'top'}}}});}
+
+function renderPersonal(){
+  const w=document.getElementById('fWorkerP')?.value||'';
+  const m=document.getElementById('fMonthP')?.value||getMonths().pop()||'';
+  const label=w||'全員';
+  const entries=w?fe({month:m,worker:w}):fe({month:m});
+  const th=sum(entries.map(e=>e.hours)),dates=uniq(entries.map(e=>e.date)).sort();
+  const byB=grp(entries,e=>e.biz),avg=dates.length?th/dates.length:0;
+  const extraStat=w?`<div class="stat"><div class="val">${Object.keys(byB).length}</div><div class="lbl">業務カテゴリ数</div></div>`
+    :`<div class="stat"><div class="val">${G.workers.length}</div><div class="lbl">作業者数</div></div>
+      <div class="stat"><div class="val">${Object.keys(byB).length}</div><div class="lbl">業務カテゴリ数</div></div>`;
+  document.getElementById('personalStats').innerHTML=`
+    <div class="stat"><div class="val">${th.toFixed(2)}</div><div class="lbl">${label} 合計(h)</div></div>
+    <div class="stat accent"><div class="val">${dates.length}</div><div class="lbl">稼働日数</div></div>
+    <div class="stat"><div class="val">${avg.toFixed(2)}</div><div class="lbl">日平均(h)</div></div>
+    ${extraStat}`;
+  const bData=Object.entries(byB).map(([b,es])=>({l:b,v:sum(es.map(e=>e.hours))})).sort((a,b)=>b.v-a.v);
+  makeChart('personalDonut',{type:'doughnut',data:{labels:bData.map(d=>d.l),datasets:[{data:bData.map(d=>d.v),backgroundColor:COLORS}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10}}}}}});
+  const byDate=grp(entries,e=>e.date);const dData=dates.map(d=>sum((byDate[d]||[]).map(e=>e.hours)));
+  makeChart('personalBar',{type:'bar',data:{labels:dates.map(d=>d.slice(5)),datasets:[{label:'作業時間(h)',data:dData,backgroundColor:COLORS[0]+'cc'}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}},plugins:{legend:{display:false}}}});
+  let t='<table><tr><th>業務カテゴリ</th><th>合計(h)</th><th>構成比</th><th>件数</th></tr>';
+  bData.forEach(d=>{t+=`<tr><td style="text-align:left">${d.l}</td><td>${d.v.toFixed(2)}</td><td>${pct(d.v,th)}</td><td>${byB[d.l].length}</td></tr>`;});
+  t+='</table>';document.getElementById('personalTable').innerHTML=t;}
+
+function renderBiz(){const biz=document.getElementById('fBiz')?.value||'';
+  const m=document.getElementById('fMonthBiz')?.value||getMonths().pop()||'';
+  const entries=fe({month:m,biz:biz||undefined}),th=sum(entries.map(e=>e.hours));
+  if(!biz){const byB=grp(entries,e=>e.biz);
+    const bData=Object.entries(byB).map(([b,es])=>({l:b,v:sum(es.map(e=>e.hours))})).sort((a,b)=>b.v-a.v).slice(0,15);
+    document.getElementById('bizStats').innerHTML=`
+      <div class="stat"><div class="val">${th.toFixed(2)}</div><div class="lbl">合計工数(h)</div></div>
+      <div class="stat"><div class="val">${Object.keys(byB).length}</div><div class="lbl">業務カテゴリ数</div></div>`;
+    makeChart('bizBar',{type:'bar',data:{labels:bData.map(d=>d.l),datasets:[{label:'工数(h)',data:bData.map(d=>d.v),backgroundColor:COLORS}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+    makeChart('bizPie',{type:'pie',data:{labels:bData.map(d=>d.l),datasets:[{data:bData.map(d=>d.v),backgroundColor:COLORS}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10}}}}}});
+    document.getElementById('bizDetailTable').innerHTML='<p style="color:var(--text2)">業務を選択すると詳細が表示されます。</p>';
+  } else {const byT=grp(entries,e=>e.task);
+    const tData=Object.entries(byT).map(([t,es])=>({l:t,v:sum(es.map(e=>e.hours))})).sort((a,b)=>b.v-a.v);
+    document.getElementById('bizStats').innerHTML=`
+      <div class="stat"><div class="val">${th.toFixed(2)}</div><div class="lbl">${biz} 合計(h)</div></div>
+      <div class="stat"><div class="val">${tData.length}</div><div class="lbl">作業数</div></div>`;
+    makeChart('bizBar',{type:'bar',data:{labels:tData.map(d=>d.l),datasets:[{label:'工数(h)',data:tData.map(d=>d.v),backgroundColor:COLORS}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}}}});
+    makeChart('bizPie',{type:'doughnut',data:{labels:tData.map(d=>d.l),datasets:[{data:tData.map(d=>d.v),backgroundColor:COLORS}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10}}}}}});
+    let t='<table><tr><th>作業</th><th>合計(h)</th><th>構成比</th><th>件数</th></tr>';
+    tData.forEach(d=>{t+=`<tr><td style="text-align:left">${d.l}</td><td>${d.v.toFixed(2)}</td><td>${pct(d.v,th)}</td><td>${byT[d.l].length}</td></tr>`;});
+    t+='</table>';document.getElementById('bizDetailTable').innerHTML=t;}}
+
+function renderPV(){
+  const m=document.getElementById('fMonthPV')?.value||getMonths().pop()||'';
+  const planM=G.plan[m]||{};const entries=fe({month:m});const byB=grp(entries,e=>e.biz);
+  const allCats=uniq([...Object.keys(planM),...Object.keys(byB)]).sort();
+  const totalPlan=sum(Object.values(planM));const totalActual=sum(entries.map(e=>e.hours));
+  const ct=+G.settings.contractHours||239;const diff=totalPlan-totalActual;
+  const consumeRate=totalPlan?totalActual/totalPlan:0;const hasPlan=totalPlan>0;
+  document.getElementById('pvStats').innerHTML=`
+    <div class="stat"><div class="val">${totalPlan.toFixed(2)}</div><div class="lbl">予定合計(h)</div></div>
+    <div class="stat accent"><div class="val">${totalActual.toFixed(2)}</div><div class="lbl">実績合計(h)</div></div>
+    <div class="stat ${diff<0?'warn':'ok'}"><div class="val">${diff.toFixed(2)}</div><div class="lbl">差異（予定−実績）</div></div>
+    <div class="stat ${consumeRate>1?'warn':consumeRate>.8?'':'ok'}"><div class="val">${hasPlan?pct(totalActual,totalPlan):'—'}</div><div class="lbl">消化率</div></div>
+    <div class="stat"><div class="val">${ct}</div><div class="lbl">契約工数(h)</div></div>
+    <div class="stat"><div class="val">${allCats.length}</div><div class="lbl">カテゴリ数</div></div>`;
+  if(!hasPlan){
+    document.getElementById('pvTable').innerHTML='<p style="color:var(--text2);padding:16px">⚠️ この月の月次計画データがありません。</p>';
+    document.getElementById('pvDetailTable').innerHTML='';
+    makeChart('pvBar',{type:'bar',data:{labels:[],datasets:[]},options:{responsive:true,maintainAspectRatio:false}});
+    makeChart('pvDonut',{type:'doughnut',data:{labels:['データなし'],datasets:[{data:[1],backgroundColor:['#e0e0e0']}]},options:{responsive:true,maintainAspectRatio:false}});return;}
+  const catData=allCats.map(c=>{const plan=planM[c]||0;const actual=sum((byB[c]||[]).map(e=>e.hours));
+    return{cat:c,plan,actual,variance:plan-actual,rate:plan?actual/plan:0};}).sort((a,b)=>b.plan-a.plan);
+  makeChart('pvBar',{type:'bar',data:{labels:catData.map(d=>d.cat),
+    datasets:[{label:'予定(h)',data:catData.map(d=>d.plan),backgroundColor:'#3949ab'},
+      {label:'実績(h)',data:catData.map(d=>d.actual),backgroundColor:'#ff8f00'}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    scales:{x:{beginAtZero:true,title:{display:true,text:'時間(h)'}}},plugins:{legend:{position:'top'}}}});
+  const planCats=catData.filter(d=>d.plan>0);
+  makeChart('pvDonut',{type:'doughnut',data:{labels:planCats.map(d=>d.cat),
+    datasets:[{data:planCats.map(d=>d.plan),backgroundColor:COLORS}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10}}}}}});
+  let t='<table><tr><th>業務カテゴリ</th><th>予定(h)</th><th>実績(h)</th><th>差異(h)</th><th>消化率</th><th>進捗</th></tr>';
+  catData.forEach(d=>{const barPct=Math.min(d.rate*100,150);const cls=d.rate>1?'over':d.rate>0.8?'warn':'ok';
+    const varCls=d.variance<0?'color:var(--danger);font-weight:700':'';
+    t+=`<tr><td style="text-align:left;font-weight:600">${d.cat}</td><td>${d.plan.toFixed(2)}</td><td>${d.actual.toFixed(2)}</td>
+      <td style="${varCls}">${d.variance.toFixed(2)}</td><td>${d.plan?pct(d.actual,d.plan):'—'}</td>
+      <td><div class="bar"><div class="bar-fill ${cls}" style="width:${Math.min(barPct,100)}%"></div></div></td></tr>`;});
+  t+=`<tr style="font-weight:700;background:#e8eaf6"><td>合計</td><td>${totalPlan.toFixed(2)}</td><td>${totalActual.toFixed(2)}</td>
+    <td style="${diff<0?'color:var(--danger)':''}">${diff.toFixed(2)}</td><td>${pct(totalActual,totalPlan)}</td><td></td></tr></table>`;
+  document.getElementById('pvTable').innerHTML=t;
+  const planTM=G.planTask[m]||{};const byBT=grp(entries,e=>e.biz+'|||'+e.task);
+  const allKeys=uniq([...Object.keys(planTM),...Object.keys(byBT)]).sort();
+  let dt='<table><tr><th>業務カテゴリ</th><th>作業</th><th>予定(h)</th><th>実績(h)</th><th>差異(h)</th><th>消化率</th></tr>';
+  let prevCat='';
+  allKeys.forEach(k=>{const[cat,task]=k.split('|||');const pl=planTM[k]||0;const ac=sum((byBT[k]||[]).map(e=>e.hours));
+    if(pl===0&&ac===0)return;const vv=pl-ac;const varCls=vv<0?'color:var(--danger);font-weight:700':'';
+    const catDisp=cat!==prevCat?cat:'';prevCat=cat;const catStyle=catDisp?'font-weight:600':'color:#999;font-size:11px';
+    dt+=`<tr><td style="text-align:left;${catStyle}">${catDisp||'\u3000'}</td>
+      <td style="text-align:left">${task}</td><td>${pl.toFixed(2)}</td><td>${ac.toFixed(2)}</td>
+      <td style="${varCls}">${vv.toFixed(2)}</td><td>${pl?pct(ac,pl):'—'}</td></tr>`;});
+  dt+='</table>';document.getElementById('pvDetailTable').innerHTML=dt;}
+
+function renderTask(){const m=document.getElementById('fMonthTask')?.value||getMonths().pop()||'';
+  const entries=fe({month:m}),byB=grp(entries,e=>e.biz),ws=G.workers;
+  const th=sum(entries.map(e=>e.hours)),ct=+G.settings.contractHours||239;
+  document.getElementById('taskStats').innerHTML=`
+    <div class="stat"><div class="val">${Object.keys(byB).length}</div><div class="lbl">業務カテゴリ数</div></div>
+    <div class="stat"><div class="val">${uniq(entries.map(e=>e.task)).length}</div><div class="lbl">ユニーク作業数</div></div>
+    <div class="stat accent"><div class="val">${th.toFixed(2)}</div><div class="lbl">総工数(h)</div></div>
+    <div class="stat ${th/ct>1?'warn':'ok'}"><div class="val">${pct(th,ct)}</div><div class="lbl">消化率</div></div>`;
+  let mt='<table><tr><th>業務カテゴリ</th>';ws.forEach(w=>{mt+=`<th>${w}</th>`;});mt+='<th>合計</th></tr>';
+  Object.entries(byB).sort((a,b)=>sum(b[1].map(e=>e.hours))-sum(a[1].map(e=>e.hours))).forEach(([biz,es])=>{
+    mt+=`<tr><td style="text-align:left;font-weight:600">${biz}</td>`;let rt=0;
+    ws.forEach(w=>{const h=sum(es.filter(e=>e.worker===w).map(e=>e.hours));rt+=h;
+      const bg=h>0?`background:rgba(26,35,126,${Math.min(h/20,.3).toFixed(2)})`:'';
+      mt+=`<td style="${bg}">${h?h.toFixed(2):''}</td>`;});
+    mt+=`<td style="font-weight:700">${rt.toFixed(2)}</td></tr>`;});
+  mt+='<tr style="font-weight:700;background:#e8eaf6"><td>合計</td>';let gt=0;
+  ws.forEach(w=>{const h=sum(entries.filter(e=>e.worker===w).map(e=>e.hours));gt+=h;mt+=`<td>${h.toFixed(2)}</td>`;});
+  mt+=`<td>${gt.toFixed(2)}</td></tr></table>`;document.getElementById('taskMatrix').innerHTML=mt;}
+
+function renderSettings(){let s='<table><tr><th>設定項目</th><th>値</th></tr>';
+  Object.entries(G.settings).forEach(([k,v])=>{s+=`<tr><td style="text-align:left">${k}</td><td style="text-align:left">${v}</td></tr>`;});
+  s+='</table>';document.getElementById('settingsView').innerHTML=s;
+  let m='<table><tr><th>業務カテゴリ</th><th>作業数</th><th>作業一覧</th></tr>';
+  Object.entries(G.master).forEach(([b,ts])=>{
+    m+=`<tr><td style="text-align:left;font-weight:600">${b}</td><td>${ts.length}</td><td style="text-align:left">${ts.map(t=>`<span class="tag">${t}</span>`).join('')}</td></tr>`;});
+  m+='</table>';document.getElementById('masterView').innerHTML=m;
+  document.getElementById('workerView').innerHTML=G.workers.map(w=>`<span class="worker-chip active">${w}</span>`).join('');}
+function renderMonthlyReport(){
+  var ct=+(G.settings.contractHours)||239;
+  var ORD=[
+    {cat:'DMPメール',subs:['通常','イレギュラー対応','企画部メール','定型業務']},
+    {cat:'業務改善',subs:['業務改善']},
+    {cat:'システム導入・改修',subs:['予約フォーム改修']},
+    {cat:'COMPASSページ運用',subs:['定型業務']},
+    {cat:'運用ルール策定',subs:['運用ルール策定']},
+    {cat:'追加業務',subs:['追加業務']},
+    {cat:'その他',subs:['その他']}
+  ];
+  var fyM=[];var fyL=['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月'];
+  var m;for(m=4;m<=12;m++)fyM.push('2026-'+String(m).padStart(2,'0'));
+  for(m=1;m<=3;m++)fyM.push('2027-'+String(m).padStart(2,'0'));
+  var D={};function iS(){var o={};fyM.forEach(function(mm){o[mm]=0;});return o;}
+  ORD.forEach(function(g){D[g.cat]={};g.subs.forEach(function(s){D[g.cat][s]=iS();});});
+  G.entries.forEach(function(e){
+    var cc=categorize(e.biz,e.task);
+    var c=cc.top,s=cc.sub;
+    if(!D[c])D[c]={};if(!D[c][s])D[c][s]=iS();
+    var mk=e.date.slice(0,7);if(D[c][s][mk]!==undefined)D[c][s][mk]+=e.hours;
+  });
+  Object.keys(D).forEach(function(c){var g=ORD.find(function(x){return x.cat===c;});
+    if(g){Object.keys(D[c]).forEach(function(s){if(g.subs.indexOf(s)<0)g.subs.push(s);});}
+    else{
+      var other=ORD.find(function(x){return x.cat==='その他';});
+      if(!D['その他'])D['その他']={};
+      Object.keys(D[c]).forEach(function(s){
+        if(!D['その他'][s])D['その他'][s]=iS();
+        fyM.forEach(function(mm){D['その他'][s][mm]=(D['その他'][s][mm]||0)+(D[c][s][mm]||0);});
+        if(other && other.subs.indexOf(s)<0) other.subs.push(s);
+      });
+      delete D[c];
+    }
+  });
+  // 「その他」カテゴリの合計が0なら ORD から除外（実績データがある時のみ表示）
+  var otherIdx = ORD.findIndex(function(x){return x.cat==='その他';});
+  if(otherIdx>=0){
+    var otherTotal=0;
+    if(D['その他']){
+      ORD[otherIdx].subs.forEach(function(s){
+        if(D['その他'][s]) fyM.forEach(function(mm){otherTotal+=D['その他'][s][mm]||0;});
+      });
+    }
+    if(otherTotal===0){
+      ORD.splice(otherIdx,1);
+      delete D['その他'];
+    }
+  }
+  var gT=0;var cT={};var mT={};fyM.forEach(function(mm){mT[mm]=0;});
+  ORD.forEach(function(g){var ct2=0;g.subs.forEach(function(s){if(!D[g.cat]||!D[g.cat][s])return;
+    fyM.forEach(function(mm){var v=D[g.cat][s][mm]||0;ct2+=v;mT[mm]+=v;});});cT[g.cat]=ct2;gT+=ct2;});
+  var aC=ct*12;var uR=aC?gT/aC:0;var dR=gT?(cT['DMPメール']||0)/gT:0;
+  var uC=uR>1?'warn':uR>0.8?'ok':'';
+  document.getElementById('mrStats').innerHTML=
+    '<div class="stat"><div class="val">'+gT.toFixed(2)+'</div><div class="lbl">年間実績工数(h)</div></div>'+
+    '<div class="stat"><div class="val">'+aC+'</div><div class="lbl">年間契約工数(h)</div></div>'+
+    '<div class="stat '+uC+'"><div class="val">'+(uR*100).toFixed(1)+'%</div><div class="lbl">消化率</div></div>'+
+    '<div class="stat accent"><div class="val">'+(dR*100).toFixed(1)+'%</div><div class="lbl">DMPメール構成比</div></div>';
+  var h='<table><tr><th style="min-width:140px">カテゴリ</th><th style="min-width:160px">サブカテゴリ</th>';
+  fyL.forEach(function(l){h+='<th>'+l+'</th>';});h+='<th>年間合計</th></tr>';
+  ORD.forEach(function(g){
+    var show=g.subs.filter(function(s){return D[g.cat]&&D[g.cat][s];});
+    if(!show.length)return;
+    show.forEach(function(s,si){h+='<tr>';
+      if(si===0)h+='<td rowspan="'+show.length+'" style="text-align:left;font-weight:600;vertical-align:top;border-right:2px solid #ddd">'+g.cat+'</td>';
+      h+='<td style="text-align:left">'+s+'</td>';var rs=0;
+      fyM.forEach(function(mm){var v=D[g.cat][s][mm]||0;rs+=v;h+='<td>'+(v?v.toFixed(2):'')+'</td>';});
+      h+='<td style="font-weight:600">'+(rs?rs.toFixed(2):'')+'</td></tr>';});
+    h+='<tr style="background:#d6e4f0;font-weight:700"><td style="text-align:left">'+g.cat+'</td><td style="text-align:center">小計</td>';
+    var cs2=0;fyM.forEach(function(mm){var ms=0;show.forEach(function(s){ms+=D[g.cat][s][mm]||0;});cs2+=ms;
+      h+='<td>'+(ms?ms.toFixed(2):'')+'</td>';});h+='<td>'+(cs2?cs2.toFixed(2):'')+'</td></tr>';});
+  h+='<tr style="background:var(--primary);color:#fff;font-weight:700"><td colspan="2">合計</td>';
+  fyM.forEach(function(mm){h+='<td>'+(mT[mm]?mT[mm].toFixed(2):'')+'</td>';});h+='<td>'+gT.toFixed(2)+'</td></tr>';
+  h+='<tr style="background:#f5f5f5;font-weight:600"><td colspan="2">契約工数</td>';
+  fyM.forEach(function(){h+='<td>'+ct+'</td>';});h+='<td>'+aC+'</td></tr>';
+  h+='<tr style="background:#f5f5f5;font-weight:600"><td colspan="2">消化率</td>';
+  fyM.forEach(function(mm){var r=ct?mT[mm]/ct:0;var cl=r>1?'color:var(--danger)':r>0.8?'color:var(--warn)':'color:var(--ok)';
+    h+='<td style="'+cl+'">'+(mT[mm]?(r*100).toFixed(1)+'%':'')+'</td>';});
+  var tR2=aC?gT/aC:0;var tC2=tR2>1?'color:var(--danger)':tR2>0.8?'color:var(--warn)':'color:var(--ok)';
+  h+='<td style="'+tC2+'">'+(tR2*100).toFixed(1)+'%</td></tr></table>';
+  document.getElementById('mrTable').innerHTML=h;
+  var pD=ORD.filter(function(g){return(cT[g.cat]||0)>0;}).map(function(g){return{l:g.cat,v:cT[g.cat]};});
+  makeChart('mrPieChart',{type:'doughnut',
+    data:{labels:pD.map(function(d){return d.l;}),datasets:[{data:pD.map(function(d){return d.v;}),
+      backgroundColor:COLORS.slice(0,pD.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+      tooltip:{callbacks:{label:function(ctx){return ctx.label+': '+ctx.parsed.toFixed(2)+'h ('+(ctx.parsed/gT*100).toFixed(1)+'%)'}}}}}});
+  var mActual=fyM.map(function(mm){return mT[mm]||0;});
+  var mContract=fyM.map(function(){return ct;});
+  makeChart('mrLineChart',{type:'line',
+    data:{labels:fyL,datasets:[
+      {label:'実績工数',data:mActual,borderColor:'#1a237e',backgroundColor:'rgba(26,35,126,.1)',fill:true,tension:.3,pointRadius:5,pointBackgroundColor:'#1a237e'},
+      {label:'契約工数',data:mContract,borderColor:'#ff6f00',borderDash:[8,4],pointRadius:0,fill:false}]},
+    options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'時間(h)'}}},
+      plugins:{legend:{position:'top'},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y.toFixed(2)+'h'}}}}}});
+}
+
+function renderReportTransfer(){
+  var ct=+(G.settings.contractHours)||239;
+  var m=document.getElementById('fMonthReport');
+  if(!m)return;
+  var month=m.value;if(!month)return;
+  var mLabel=({'01':'1月','02':'2月','03':'3月','04':'4月','05':'5月','06':'6月','07':'7月','08':'8月','09':'9月','10':'10月','11':'11月','12':'12月'})[month.slice(5,7)]||month;
+
+  // Classification function: returns category key
+  var ROUTINE_BIZ=['ハウスリスト管理_シャノン','シャノン運用管理','配信停止一覧メール展開','顧客情報基盤活動','メール高度化・改善','ソリューション営業の案件化支援策','窓口対応_dmp_all_ML','レポート作成・資料作成','週次報告会','週次報告会以外のスポットMtg','定例会_顧客情報基盤活動'];
+
+  function classify(biz,task){
+    var cc=categorize(biz,task);
+    var top=cc.top,sub=cc.sub;
+    if(top==='DMPメール'){
+      if(sub==='企画部メール') return 'kikabu';
+      if(sub==='通常'||sub==='イレギュラー対応') return 'dmp_mail';
+      return 'routine';
+    }
+    if(top==='運用ルール策定'||top==='業務改善') return 'rule_kaizen';
+    if(top==='COMPASSページ運用') return 'compass';
+    if(top==='システム導入・改修') return 'form';
+    if(top==='追加業務'){
+      if(task==='営業通知のリニューアル') return 'eigyo';
+      if(task==='AI伴走テスト') return 'ai';
+      return 'other';
+    }
+    return 'routine';
+  }
+
+  // Category definitions
+  var CATS=[
+    {key:'dmp',label:'①DMPメール',subs:[
+      {key:'dmp_mail',label:'DMPメール運用（通常・イレギュラー含む）'},
+      {key:'kikabu',label:'企画部メール対応（コンテンツ選定〜メール作成まで）'},
+      {key:'routine',label:'定型業務（問い合わせ対応や既存運用業務）'}
+    ]},
+    {key:'rule_kaizen',label:'②運用ルール策定・業務改善',subs:[
+      {key:'rule_kaizen',label:'運用ルール策定・業務改善'}
+    ]},
+    {key:'compass',label:'③DMP運営（Compass改修）',subs:[
+      {key:'compass',label:'_tasks_'}
+    ]},
+    {key:'form',label:'④予約フォーム改修',subs:[
+      {key:'form',label:'_tasks_'}
+    ]},
+    {key:'eigyo',label:'⑤営業通知リニューアル',subs:[
+      {key:'eigyo',label:'_tasks_'}
+    ]},
+    {key:'ai',label:'⑥AI伴走支援',subs:[
+      {key:'ai',label:'_tasks_'}
+    ]}
+  ];
+
+  // Aggregate actual
+  var actual={};var taskSets={};
+  var entries=G.entries.filter(function(e){return e.date.slice(0,7)===month;});
+  entries.forEach(function(e){
+    var k=classify(e.biz,e.task);
+    if(!actual[k])actual[k]=0;
+    actual[k]+=e.hours;
+    if(!taskSets[k])taskSets[k]={};
+    taskSets[k][e.task]=1;
+  });
+
+  // Aggregate plan from planTask
+  var plan={};
+  var pt=G.planTask[month]||{};
+  Object.keys(pt).forEach(function(pk){
+    var parts=pk.split('|||');
+    var biz=parts[0],task=parts[1]||'';
+    var k=classify(biz,task);
+    if(!plan[k])plan[k]=0;
+    plan[k]+=pt[pk];
+  });
+
+  // Compute totals
+
+var totalPlan = Object.values(plan).reduce((s,v)=>s+(v||0),0);
+var totalActual = entries.reduce((s,e)=>s+e.hours,0);
+
+  var remain=ct-totalActual;var rate=ct?totalActual/ct:0;
+  var rateCls=rate>1?'warn':rate>0.8?'ok':'';
+
+  // Stats
+  document.getElementById('rtStats').innerHTML=
+    '<div class="stat"><div class="val">'+ct+'.00</div><div class="lbl">契約工数(h)</div></div>'+
+    '<div class="stat accent"><div class="val">'+totalActual.toFixed(2)+'</div><div class="lbl">実績合計(h)</div></div>'+
+    '<div class="stat '+rateCls+'"><div class="val">'+(rate*100).toFixed(1)+'%</div><div class="lbl">消化率</div></div>'+
+    '<div class="stat '+(remain<0?'warn':'')+'"><div class="val">'+remain.toFixed(2)+'</div><div class="lbl">残時間(h)</div></div>';
+
+
+
+  // Build table
+  var catStyle='background:var(--primary);color:#fff;font-weight:700;text-align:left;padding:10px 12px;vertical-align:top;border:1px solid #ccc';
+  var tdStyle='padding:8px 12px;border:1px solid #ddd;text-align:left';
+  var numStyle='padding:8px 12px;border:1px solid #ddd;text-align:right;font-weight:500';
+  var totalStyle='background:var(--primary);color:#fff;font-weight:700;padding:10px 12px;border:1px solid #ccc';
+
+  var t='<table style="border-collapse:collapse;width:100%">';
+  t+='<tr><th colspan="2" style="min-width:280px">'+mLabel+'</th><th>タスク</th><th colspan="2">作業時間(h)</th></tr>';
+  t+='<tr><th></th><th></th><th></th><th>予定時間</th><th>実績時間</th></tr>';
+
+  // Filter visible cats
+  var visCats=[];
+  CATS.forEach(function(cat){
+    var hasSub=false;
+    cat.subs.forEach(function(sub){
+      var p=plan[sub.key]||0;var a=actual[sub.key]||0;
+      if(p>0||a>0)hasSub=true;
+    });
+    if(hasSub)visCats.push(cat);
+  });
+
+  visCats.forEach(function(cat){
+    var visibleSubs=cat.subs.filter(function(sub){
+      return (plan[sub.key]||0)>0||(actual[sub.key]||0)>0;
+    });
+    if(!visibleSubs.length)return;
+    var rowCount=visibleSubs.length;
+
+    visibleSubs.forEach(function(sub,si){
+      t+='<tr>';
+      if(si===0){
+        t+='<td rowspan="'+rowCount+'" style="'+catStyle+';width:180px">'+cat.label+'</td>';
+      }
+      // Task description
+      var taskLabel=sub.label;
+      if(taskLabel==='_tasks_'){
+        var ts=taskSets[sub.key]?Object.keys(taskSets[sub.key]):[];
+        // Also check plan tasks
+        Object.keys(pt).forEach(function(pk){
+          var parts=pk.split('|||');
+          if(classify(parts[0],parts[1]||'')===sub.key && ts.indexOf(parts[1])<0) ts.push(parts[1]);
+        });
+        taskLabel=ts.length?ts.map(function(x){return '・'+x;}).join('<br>'):'—';
+      }
+      t+='<td colspan="2" style="'+tdStyle+'">'+taskLabel+'</td>';
+      var pv=plan[sub.key]||0;var av=actual[sub.key]||0;
+      t+='<td style="'+numStyle+'">'+pv.toFixed(2)+'</td>';
+      t+='<td style="'+numStyle+'">'+av.toFixed(2)+'</td>';
+      t+='</tr>';
+    });
+  });
+
+  // Total row
+  t+='<tr><td colspan="3" style="'+totalStyle+';text-align:right">合計</td>';
+  t+='<td style="'+totalStyle+';text-align:right">'+ct.toFixed(2)+'</td>';
+  t+='<td style="'+totalStyle+';text-align:right">'+totalActual.toFixed(2)+'</td></tr>';
+  t+='</table>';
+  document.getElementById('rtTable').innerHTML=t;
+  
+
+  var dcInput=document.getElementById('inputDeliveryCount');
+  if(dcInput){
+    dcInput.value=G.deliveryCounts[month]||'';
+  }
+  renderPerMailTable(month);
+
+}
+/* ====== ここから追加（完全版）====== */
+
+G.deliveryCounts = G.deliveryCounts || {};
+
+// 入力リスナー
+setTimeout(function(){
+  const input = document.getElementById('inputDeliveryCount');
+  if(input){
+    input.addEventListener('input', function(){
+      const m = document.getElementById('fMonthReport')?.value;
+      if(m){
+        G.deliveryCounts[m] = parseFloat(this.value) || 0;
+        renderPerMailTable(m);
+      }
+    });
+  }
+}, 500);
+
+
+
+
+function normalizeTask(task, biz){
+  biz = biz || 'SCSKメール運用';
+  if(TASK_MAP[biz] && TASK_MAP[biz][task] && TASK_MAP[biz][task].mail){
+    return TASK_MAP[biz][task].mail;
+  }
+  const nb=normStr(biz), nt=normStr(task);
+  if(TASK_MAP_NORM[nb] && TASK_MAP_NORM[nb][nt] && TASK_MAP_NORM[nb][nt].mail){
+    return TASK_MAP_NORM[nb][nt].mail;
+  }
+  if(task.includes('【企画本部】')) return '予備メルマガ作成';
+  task = task.replace('【イレギュラー対応】','');
+  task = task.trim();
+  if(task.includes('テスト送付')) return 'メールテンプレート作成';
+  if(task.includes('修正対応')) return 'メールテンプレート作成';
+  return task;
+}
+// 1メール工数テーブル
+function renderPerMailTable(month){
+
+  const el = document.getElementById('rtPerMailTable');
+  if(!el) return;
+
+  const dc = G.deliveryCounts[month] || 0;
+
+  if(!dc){
+    el.innerHTML = '配信件数を入力してください';
+    return;
+  }
+
+  const TASKS = [
+    // ★Book16『SCSK報告用メール業務詳細』を基準にキーを正規化後カテゴリ名で揃える
+    {name:'Wチェック',                   keys:['Wチェック']},
+    {name:'検索条件作成',                keys:['検索条件作成']},
+    {name:'メールテンプレート作成',      keys:['メールテンプレート作成']},
+    {name:'依頼部署とのやりとり',        keys:['依頼部署とのやりとり']},
+    {name:'送信設定',                    keys:['送信設定']},
+    {name:'予約システム管理・リスト反映', keys:['予約システム管理']},
+    {name:'予備メルマガ作成',            keys:['予備メルマガ作成']},
+    {name:'予約対応',                    keys:['予約対応']},
+    {name:'配信コンテンツ調整',          keys:['配信コンテンツ調整']}
+  ];
+
+  const entries = G.entries.filter(e =>
+    e.date.slice(0,7) === month && e.biz === 'SCSKメール運用'
+  );
+
+  const taskHours = {};
+
+
+  entries.forEach(e=>{
+    const nt = normalizeTask(e.task, e.biz);  // ← 正規化(TASK_MAP使用)
+    taskHours[nt] = (taskHours[nt] || 0) + e.hours;
+  });
+
+
+  let html = '<table><tr><th>カテゴリ</th><th>分</th></tr>';
+  let total = 0;
+
+  TASKS.forEach(t=>{
+    let h = 0;
+    t.keys.forEach(k => h += taskHours[k] || 0);
+
+    let m = (h * 60) / dc;
+    total += m;
+
+    let style = m > 50 ? 'style="color:red;font-weight:bold"' : '';
+
+    html += `<tr><td>${t.name}</td><td ${style}>${m.toFixed(2)}</td></tr>`;
+  });
+
+  html += `<tr style="font-weight:bold"><td>計</td><td>${total.toFixed(2)}</td></tr>`;
+  html += '</table>';
+
+  el.innerHTML = html;
+}
+
+/* ====== ここまで追加 ====== */
+
+</script>
+</body>
+</html>
