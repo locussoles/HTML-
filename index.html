@@ -7,86 +7,402 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
+:root {
+  --bg:       #f8f9fb;
+  --surface:  #ffffff;
+  --border:   #e5e8ef;
+  --text:     #1a1d27;
+  --text2:    #6b7280;
+  --text3:    #9ca3af;
+  --accent:   #0ea5e9;
+  --accent-l: #e0f2fe;
+  --accent-d: #0284c7;
+  --ok:       #059669;
+  --ok-l:     #d1fae5;
+  --warn:     #d97706;
+  --warn-l:   #fef3c7;
+  --danger:   #dc2626;
+  --danger-l: #fee2e2;
+  --nav-w:    220px;
+  --shadow-s: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-m: 0 4px 16px rgba(0,0,0,.08);
+  --radius:   10px;
+  --radius-s: 6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', 'Segoe UI', 'メイリオ', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.6;
+  display: flex;
+  min-height: 100vh;
+}
 
-:root{--primary:#1a237e;--pl:#3949ab;--accent:#ff6f00;--bg:#f4f5f9;
---card:#fff;--border:#e0e0e0;--text:#212121;--text2:#757575;--ok:#2e7d32;
---warn:#f57f17;--danger:#c62828;--shadow:0 2px 12px rgba(0,0,0,.07)}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Segoe UI','メイリオ',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
-.header{background:linear-gradient(135deg,var(--primary) 0%,var(--pl) 100%);color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(26,35,126,.18)}
-.header h1{font-size:18px;font-weight:700;letter-spacing:-.3px;text-shadow:0 1px 3px rgba(0,0,0,.15)}.header .ver{font-size:11px;opacity:.65}
-.tabs{display:flex;background:#fff;border-bottom:2px solid var(--primary);overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.tab{padding:11px 20px;cursor:pointer;font-size:13.5px;white-space:nowrap;border-bottom:3px solid transparent;transition:all .25s ease;color:var(--text2);letter-spacing:.2px}
-.tab:hover{background:#eef0f8;color:var(--primary)}.tab.active{color:var(--primary);border-bottom-color:var(--accent);font-weight:700;background:#f8f9ff}
-.content{padding:18px;max-width:1400px;margin:0 auto}
-.panel{display:none}.panel.active{display:block}
-.card{background:var(--card);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border);transition:box-shadow .25s ease,transform .25s ease}
-.card:hover{box-shadow:0 4px 18px rgba(0,0,0,.10)}
-.card h3{font-size:15px;color:var(--primary);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8eaf6;letter-spacing:.3px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--card);border-radius:10px;padding:16px 14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid var(--primary);transition:all .25s ease}
-.stat:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.10)}
-.stat .val{font-size:26px;font-weight:700;color:var(--primary);letter-spacing:-.5px;text-shadow:0 1px 2px rgba(26,35,126,.06)}
-.stat .lbl{font-size:11px;color:var(--text2);margin-top:6px;letter-spacing:.3px}
-.stat.warn{border-left-color:var(--warn)}.stat.warn .val{color:var(--warn)}
-.stat.ok{border-left-color:var(--ok)}.stat.ok .val{color:var(--ok)}
-.stat.accent{border-left-color:var(--accent)}.stat.accent .val{color:var(--accent)}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{background:var(--primary);color:#fff;padding:10px 12px;text-align:center;font-weight:600;position:sticky;top:0;letter-spacing:.5px;font-size:12.5px}
-th:first-child{border-radius:6px 0 0 0}th:last-child{border-radius:0 6px 0 0}
-td{padding:8px 12px;border-bottom:1px solid #eee;text-align:center;transition:background .15s ease}
-tr:nth-child(even){background:#f8f9fc}tr:hover{background:#e8eaf6}
-.tbl-wrap{max-height:520px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
-.bar{height:24px;border-radius:6px;background:#eee;overflow:hidden;min-width:80px}
-.bar-fill{height:100%;border-radius:6px;transition:width .6s ease}
-.bar-fill.ok{background:linear-gradient(90deg,#43a047,#66bb6a)}
-.bar-fill.warn{background:linear-gradient(90deg,#f9a825,#fdd835)}
-.bar-fill.over{background:linear-gradient(90deg,#e53935,#ef5350)}
-select,input[type=text],input[type=number],input[type=date]{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;transition:all .2s ease;background:#fff}
-select:focus,input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,35,126,.12)}
-select:hover,input:hover{border-color:#9fa8da}
-button{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .25s ease;font-weight:600}
-.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--pl);transform:scale(1.02);box-shadow:0 3px 12px rgba(26,35,126,.2)}
-.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{opacity:.92;transform:scale(1.02);box-shadow:0 3px 12px rgba(255,111,0,.2)}
-.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.filters{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;align-items:center;background:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.05);border:1px solid #eee}
-.filters label{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.2px}
-.tag{display:inline-block;padding:4px 12px;border-radius:14px;font-size:11.5px;background:#eef0f8;color:var(--primary);margin:2px;transition:all .2s ease;border:1px solid transparent}
-.tag:hover{background:#dde1f7;border-color:#c5cae9}
-.drop-zone{border:3px dashed #9fa8da;border-radius:20px;padding:56px 24px;text-align:center;background:linear-gradient(135deg,#f3f4fd,#eef0fa);transition:.3s;cursor:pointer;margin-bottom:16px}
-.drop-zone:hover,.drop-zone.drag-over{background:linear-gradient(135deg,#dde1f7,#d1d5f0);border-color:var(--primary);transform:scale(1.01)}
-.drop-zone .icon{font-size:56px;margin-bottom:14px}.drop-zone .txt{font-size:16px;color:var(--primary);font-weight:700;letter-spacing:.3px}
-.drop-zone .sub{font-size:12px;color:var(--text2);margin-top:10px}
-.load-status{padding:12px 18px;border-radius:10px;margin-top:12px;font-size:13px;display:none;font-weight:500}
-.load-status.ok{display:block;background:#e8f5e9;color:var(--ok);border:1px solid #a5d6a7}
-.load-status.err{display:block;background:#ffebee;color:var(--danger);border:1px solid #ef9a9a}
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.chart-box{position:relative;max-height:350px}
-.worker-chip{display:inline-flex;padding:5px 14px;border-radius:18px;margin:3px;font-size:12px;background:#eef0f8;color:var(--primary);border:1px solid #c5cae9;transition:all .2s ease;font-weight:500}
-.worker-chip:hover{background:#dde1f7;transform:translateY(-1px)}
-.worker-chip.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 2px 8px rgba(26,35,126,.2)}
-.worker-chip.active:hover{background:var(--pl)}
-@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.chart-row{grid-template-columns:1fr}.filters{flex-direction:column;align-items:stretch}}
+/* ── Sidebar Navigation ─────────────────────────────── */
+.sidebar {
+  width: var(--nav-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-s);
+}
+.sidebar-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo .product {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.sidebar-logo .title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+.sidebar-logo .ver {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.nav-section {
+  padding: 12px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  margin: 1px 8px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tab .tab-icon { font-size: 15px; flex-shrink: 0; }
+.tab:hover { background: var(--bg); color: var(--text); }
+.tab.active { background: var(--accent-l); color: var(--accent-d); font-weight: 600; }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.5;
+  min-height: 44px;
+}
 
+/* ── Main Content ────────────────────────────────────── */
+.main {
+  margin-left: var(--nav-w);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+.topbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.topbar-info {
+  font-size: 11.5px;
+  color: var(--text3);
+  text-align: right;
+  line-height: 1.4;
+}
+.content { padding: 24px 28px; max-width: 1300px; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Cards ───────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-s);
+}
+.card h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 16px;
+}
+
+/* ── Stats ───────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  box-shadow: var(--shadow-s);
+}
+.stat .val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.stat .lbl {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+  font-weight: 500;
+  letter-spacing: .03em;
+}
+.stat.warn  { background: var(--warn-l);   border-color: #fcd34d; }
+.stat.warn .val  { color: var(--warn); }
+.stat.ok    { background: var(--ok-l);     border-color: #6ee7b7; }
+.stat.ok .val    { color: var(--ok); }
+.stat.accent { background: var(--accent-l); border-color: #7dd3fc; }
+.stat.accent .val { color: var(--accent-d); }
+
+/* ── Tables ──────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  background: var(--bg);
+  color: var(--text2);
+  padding: 9px 12px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  border-bottom: 2px solid var(--border);
+}
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  color: var(--text);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg); }
+.tbl-wrap {
+  max-height: 520px;
+  overflow: auto;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+}
+
+/* ── Filters ─────────────────────────────────────────── */
+.filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.filters label {
+  font-size: 11.5px;
+  color: var(--text2);
+  font-weight: 600;
+  letter-spacing: .03em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+select, input[type=text], input[type=number], input[type=date] {
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color .15s, box-shadow .15s;
+}
+select:hover, input:hover { border-color: var(--accent); }
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(14,165,233,.12);
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+button {
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all .15s;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-d); box-shadow: 0 3px 10px rgba(14,165,233,.3); }
+.btn-accent {
+  background: var(--text);
+  color: #fff;
+}
+.btn-accent:hover { background: #374151; box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+
+/* ── Drop Zone ───────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 52px 24px;
+  text-align: center;
+  background: var(--bg);
+  transition: all .2s;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-l);
+}
+.drop-zone .icon { font-size: 44px; margin-bottom: 12px; opacity: .7; }
+.drop-zone .txt {
+  font-size: 15px;
+  color: var(--text);
+  font-weight: 700;
+}
+.drop-zone .sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
+.load-status {
+  padding: 11px 16px;
+  border-radius: var(--radius-s);
+  margin-top: 10px;
+  font-size: 13px;
+  display: none;
+  font-weight: 500;
+}
+.load-status.ok  { display: block; background: var(--ok-l);   color: var(--ok);   border: 1px solid #6ee7b7; }
+.load-status.err { display: block; background: var(--danger-l); color: var(--danger); border: 1px solid #fca5a5; }
+
+/* ── Charts ──────────────────────────────────────────── */
+.chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.chart-box { position: relative; max-height: 340px; }
+
+/* ── Misc ────────────────────────────────────────────── */
+.flex { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bar { height: 20px; border-radius: 4px; background: var(--bg); overflow: hidden; min-width: 80px; border: 1px solid var(--border); }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+.bar-fill.ok   { background: var(--ok); }
+.bar-fill.warn { background: var(--warn); }
+.bar-fill.over { background: var(--danger); }
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-l);
+  color: var(--accent-d);
+  margin: 2px;
+}
+.worker-chip {
+  display: inline-flex;
+  padding: 5px 14px;
+  border-radius: 99px;
+  margin: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .15s;
+}
+.worker-chip:hover { border-color: var(--accent); color: var(--accent-d); }
+.worker-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .chart-row { grid-template-columns: 1fr; }
+  .filters { flex-direction: column; align-items: stretch; }
+}
 </style>
 </head>
 <body>
-<div class="header">
-<div><h1>📊 SCSK-DMP 日報ダッシュボード</h1><span class="ver">v8.3 — 1メール工数 集計修正</span></div>
-<div style="font-size:12px" id="headerInfo"></div>
-</div>
-<div class="tabs" id="tabBar">
-<div class="tab active" data-tab="0">📂 Excel読込</div>
-<div class="tab" data-tab="1">📊 日次集計</div>
-<div class="tab" data-tab="2">📈 月次集計</div>
-<div class="tab" data-tab="3">👤 個人分析</div>
-<div class="tab" data-tab="4">📋 業務別分析</div>
-<div class="tab" data-tab="5">📊 予実管理</div>
-<div class="tab" data-tab="6">✅ タスク管理</div>
-<div class="tab" data-tab="7">⚙️ 設定</div>
-<div class="tab" data-tab="8">📈 月次推移</div>
-<div class="tab" data-tab="9">📋 月次レポート転記用</div>
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">SCSK · DMP</div>
+    <div class="title">日報ダッシュボード</div>
+    <div class="ver">v9.0</div>
+  </div>
+  <div id="tabBar">
+    <div class="nav-section">データ</div>
+    <div class="tab active" data-tab="0"><span class="tab-icon">📂</span>Excel 読込</div>
+    <div class="nav-section">分析</div>
+    <div class="tab" data-tab="1"><span class="tab-icon">📅</span>日次集計</div>
+    <div class="tab" data-tab="2"><span class="tab-icon">📈</span>月次集計</div>
+    <div class="tab" data-tab="3"><span class="tab-icon">👤</span>個人分析</div>
+    <div class="tab" data-tab="4"><span class="tab-icon">📋</span>業務別分析</div>
+    <div class="nav-section">管理</div>
+    <div class="tab" data-tab="5"><span class="tab-icon">⚖️</span>予実管理</div>
+    <div class="tab" data-tab="6"><span class="tab-icon">✅</span>タスク管理</div>
+    <div class="tab" data-tab="8"><span class="tab-icon">📊</span>月次推移</div>
+    <div class="tab" data-tab="9"><span class="tab-icon">📝</span>レポート転記</div>
+    <div class="nav-section">システム</div>
+    <div class="tab" data-tab="7"><span class="tab-icon">⚙️</span>設定</div>
+  </div>
+  <div class="sidebar-footer" id="headerInfo"></div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+<div class="topbar">
+  <div class="topbar-title" id="topbarTitle">Excel 読込</div>
+  <div class="topbar-info">SCSK-DMP 日報管理システム</div>
 </div>
 <div class="content">
 
@@ -239,580 +555,132 @@ button{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;font-size:1
 // Global State (identical to v7.2)
 let G={entries:[],master:{},workers:[],settings:{},plan:{},planTask:{},deliveryCounts:{},loaded:false};
 
-// ====== TASK_MAP (Excel 業務→月次報告カテゴリ マッピング) ======
-const TASK_MAP = {
-  "週次報告会": {
-    "週次報告会": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "週次報告会以外のスポットMtg": {
-    "週次報告会以外のスポットMtg": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "定例会_顧客情報基盤活動": {
-    "NS定例": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "レポート作成・資料作成": {
-    "月次報告書作成": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "アカウントレポート作成": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "週次報告書作成": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "その他(備考に記載)": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "窓口対応_dmp_all_ML": {
-    "窓口対応(dmp-all：ML)": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "窓口対応(Teams、チャット流入)": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "窓口対応(事例・広報対応)": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "SCSKメール運用": {
-    "予約システム管理": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "予約システム管理"
-    },
-    "グループ会社メール予約対応": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "予約対応"
-    },
-    "予約確認メール(対現場)": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "予約対応"
-    },
-    "配信コンテンツ調整(優先度決定)": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "配信コンテンツ調整"
-    },
-    "メールテンプレート作成": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "メールテンプレート作成"
-    },
-    "メールテンプレートWチェック": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "Wチェック"
-    },
-    "検索条件作成": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "検索条件作成"
-    },
-    "検索条件Wチェック": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "Wチェック"
-    },
-    "テスト送付・修正対応": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "メールテンプレート作成"
-    },
-    "送信ウィザード設定": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "送信設定"
-    },
-    "送信ウィザードWチェック": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "Wチェック"
-    },
-    "配信結果公開・リスト反映": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "予約システム管理"
-    },
-    "依頼元とのメールやりとり": {
-      "top": "DMPメール",
-      "sub": "通常",
-      "mail": "依頼部署とのやりとり"
-    },
-    "【イレギュラー対応】メールテンプレート作成": {
-      "top": "DMPメール",
-      "sub": "イレギュラー対応",
-      "mail": "メールテンプレート作成"
-    },
-    "【イレギュラー対応】検索条件作成": {
-      "top": "DMPメール",
-      "sub": "イレギュラー対応",
-      "mail": "検索条件作成"
-    },
-    "【イレギュラー対応】依頼元とのメールやりとり": {
-      "top": "DMPメール",
-      "sub": "イレギュラー対応",
-      "mail": "依頼部署とのやりとり"
-    },
-    "【イレギュラー対応】テスト送付・修正対応": {
-      "top": "DMPメール",
-      "sub": "イレギュラー対応",
-      "mail": "メールテンプレート作成"
-    },
-    "【企画本部】メールコンテンツ検討": {
-      "top": "DMPメール",
-      "sub": "企画部メール",
-      "mail": "予備メルマガ作成"
-    },
-    "【企画本部】メールテンプレート作成": {
-      "top": "DMPメール",
-      "sub": "企画部メール",
-      "mail": "予備メルマガ作成"
-    }
-  },
-  "ハウスリスト管理_シャノン": {
-    "リスト抽出": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "名寄せ・リード追加・更新": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "重点顧客_144社_リスト更新": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "申込者情報クレンジング・リード取込": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "削除されたリードの復活防止対応": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "リード削除のための事前調査": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "リード削除用リスト作成": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "リード削除作業": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "既存取引先リードフラグ更新": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "リードクレンジング": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "COMPASSページ更新(ハウスリスト状況集計・発信)": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "シャノン運用管理": {
-    "シャノン権限付与": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "アカウント追加変更・棚卸": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "MA_シャノンフォーム管理_scsk.jp": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "API連携": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "シャノン上の設定変更": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "配信停止一覧の展開": {
-    "配信停止一覧メール展開": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "顧客情報基盤活動": {
-    "新着リード棚卸、設定更新": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "エクスポート対応": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "個別依頼作業": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "通知メールテンプレート差し替え": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "運用改善": {
-    "業務フロー・明文化対象の洗い出し": {
-      "top": "業務改善",
-      "sub": "業務改善",
-      "mail": ""
-    },
-    "メール運用のオペレーション見直し": {
-      "top": "業務改善",
-      "sub": "業務改善",
-      "mail": ""
-    },
-    "業務効率化検討": {
-      "top": "業務改善",
-      "sub": "業務改善",
-      "mail": ""
-    },
-    "AI活用検討": {
-      "top": "業務改善",
-      "sub": "業務改善",
-      "mail": ""
-    },
-    "ツール利用検討": {
-      "top": "業務改善",
-      "sub": "業務改善",
-      "mail": ""
-    },
-    "運用ルール改善": {
-      "top": "業務改善",
-      "sub": "業務改善",
-      "mail": ""
-    }
-  },
-  "システム構築・修正": {
-    "ツール調査": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "仕様検討": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "要件定義": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "テストアプリ実装": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "テストアプリ動作確認": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "テストアプリ・レビュー": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "本番環境へ実装": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "本番環境動作確認": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "リリース前・レビュー": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    },
-    "アプリ修正対応": {
-      "top": "システム導入・改修",
-      "sub": "予約フォーム改修",
-      "mail": ""
-    }
-  },
-  "COMPASSページ運用": {
-    "手続き・ガイド・ルール策定": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "運用ルールの設定・可視化": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "Compass掲載内容の検討": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "Compass掲載内容のモックの作成": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "原稿案作成": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "レビュー① 原稿レビュー": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "レビュー② 部長原稿レビュー": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "Compass更新作業": {
-      "top": "COMPASSページ運用",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "ソリューション営業の案件化支援策": {
-    "SMPからのリードダウンロード": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "営業要望ヒアリング": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "要望に基づくレポート等施策検討": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    },
-    "ターゲットリスト調査": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "メール高度化・改善": {
-    "SCSK-DMPメールの改善(送信増・トラッキング増・CV)": {
-      "top": "DMPメール",
-      "sub": "定型業務",
-      "mail": ""
-    }
-  },
-  "ルール明文化": {
-    "【言語化】メールアドレスクレンジング作業(日々のマージ・クレンジング)": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】予約対応": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】グループ会社メール予約対応": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】予約確認メール(対現場)": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】配信コンテンツ調整(優先度決定)": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】配信数調査・確定": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】配信設定": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】配信結果連携": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】削除済リードの定期": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】配信停止・登録変更": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】問い合わせ対応": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】ソリューション・アカウント作成マニュアル": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】HTMLメール作成マニュアル": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】リード削除作業": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    },
-    "【言語化】通知メール": {
-      "top": "運用ルール策定",
-      "sub": "運用ルール策定",
-      "mail": ""
-    }
-  },
-  "追加業務": {
-    "営業通知のリニューアル": {
-      "top": "追加業務",
-      "sub": "追加業務",
-      "mail": ""
-    },
-    "AI伴走テスト": {
-      "top": "追加業務",
-      "sub": "追加業務",
-      "mail": ""
-    }
-  }
+// ============================================================
+// 業務マスタ (MASTER) — ここだけ編集すれば集計結果に反映される
+// 構造: { bizName: { top, sub, mail } }
+//   top  : 月次報告カテゴリ（Tab2/Tab8 の集計軸）
+//   sub  : サブカテゴリ（Tab8 の行分割に使用）
+//   mail : 1メール工数集計キー（Tab9 の「1メール当たり工数」に使用）
+//          SCSKメール運用の作業のみ設定。それ以外は '' のまま。
+//
+// 作業名ベースの例外ルール（CLASSIFY_RULES）は下部に分離して定義。
+// ============================================================
+
+const MASTER = {
+  // ── 定型業務系 ──────────────────────────────────────────
+  "週次報告会":                  { top: "DMPメール", sub: "定型業務", mail: "" },
+  "週次報告会以外のスポットMtg": { top: "DMPメール", sub: "定型業務", mail: "" },
+  "定例会_顧客情報基盤活動":     { top: "DMPメール", sub: "定型業務", mail: "" },
+  "レポート作成・資料作成":      { top: "DMPメール", sub: "定型業務", mail: "" },
+  "窓口対応_dmp_all_ML":         { top: "DMPメール", sub: "定型業務", mail: "" },
+  "ハウスリスト管理_シャノン":   { top: "DMPメール", sub: "定型業務", mail: "" },
+  "シャノン運用管理":            { top: "DMPメール", sub: "定型業務", mail: "" },
+  "配信停止一覧の展開":          { top: "DMPメール", sub: "定型業務", mail: "" },
+  "顧客情報基盤活動":            { top: "DMPメール", sub: "定型業務", mail: "" },
+  "ソリューション営業の案件化支援策": { top: "DMPメール", sub: "定型業務", mail: "" },
+  "メール高度化・改善":          { top: "DMPメール", sub: "定型業務", mail: "" },
+
+  // ── SCSKメール運用（作業名ごとに sub / mail を設定）─────
+  // ▼ 通常作業
+  "SCSKメール運用:予約システム管理":           { top: "DMPメール", sub: "通常", mail: "予約システム管理" },
+  "SCSKメール運用:グループ会社メール予約対応": { top: "DMPメール", sub: "通常", mail: "予約対応" },
+  "SCSKメール運用:予約確認メール(対現場)":     { top: "DMPメール", sub: "通常", mail: "予約対応" },
+  "SCSKメール運用:配信コンテンツ調整(優先度決定)": { top: "DMPメール", sub: "通常", mail: "配信コンテンツ調整" },
+  "SCSKメール運用:メールテンプレート作成":      { top: "DMPメール", sub: "通常", mail: "メールテンプレート作成" },
+  "SCSKメール運用:メールテンプレートWチェック": { top: "DMPメール", sub: "通常", mail: "Wチェック" },
+  "SCSKメール運用:検索条件作成":               { top: "DMPメール", sub: "通常", mail: "検索条件作成" },
+  "SCSKメール運用:検索条件Wチェック":          { top: "DMPメール", sub: "通常", mail: "Wチェック" },
+  "SCSKメール運用:テスト送付・修正対応":       { top: "DMPメール", sub: "通常", mail: "メールテンプレート作成" },
+  "SCSKメール運用:送信ウィザード設定":         { top: "DMPメール", sub: "通常", mail: "送信設定" },
+  "SCSKメール運用:送信ウィザードWチェック":    { top: "DMPメール", sub: "通常", mail: "Wチェック" },
+  "SCSKメール運用:配信結果公開・リスト反映":   { top: "DMPメール", sub: "通常", mail: "予約システム管理" },
+  "SCSKメール運用:依頼元とのメールやりとり":   { top: "DMPメール", sub: "通常", mail: "依頼部署とのやりとり" },
+  // ▼ イレギュラー対応（【イレギュラー対応】プレフィックス付き）
+  "SCSKメール運用:【イレギュラー対応】メールテンプレート作成": { top: "DMPメール", sub: "イレギュラー対応", mail: "メールテンプレート作成" },
+  "SCSKメール運用:【イレギュラー対応】検索条件作成":          { top: "DMPメール", sub: "イレギュラー対応", mail: "検索条件作成" },
+  "SCSKメール運用:【イレギュラー対応】依頼元とのメールやりとり": { top: "DMPメール", sub: "イレギュラー対応", mail: "依頼部署とのやりとり" },
+  "SCSKメール運用:【イレギュラー対応】テスト送付・修正対応":   { top: "DMPメール", sub: "イレギュラー対応", mail: "メールテンプレート作成" },
+  // ▼ 企画部メール（【企画本部】プレフィックス付き）
+  "SCSKメール運用:【企画本部】メールコンテンツ検討":  { top: "DMPメール", sub: "企画部メール", mail: "予備メルマガ作成" },
+  "SCSKメール運用:【企画本部】メールテンプレート作成": { top: "DMPメール", sub: "企画部メール", mail: "予備メルマガ作成" },
+
+  // ── 非DMPメール系 ────────────────────────────────────────
+  "運用改善":          { top: "業務改善",         sub: "業務改善",     mail: "" },
+  "システム構築・修正": { top: "システム導入・改修", sub: "予約フォーム改修", mail: "" },
+  "COMPASSページ運用": { top: "COMPASSページ運用", sub: "定型業務",     mail: "" },
+  "ルール明文化":      { top: "運用ルール策定",    sub: "運用ルール策定", mail: "" },
+  "追加業務":          { top: "追加業務",          sub: "追加業務",     mail: "" },
 };
 
-// 正規化: 空白・全角空白・記号類を除去して比較用キーに
-function normStr(s){
+// ============================================================
+// マスタ引き当てロジック
+// SCSKメール運用は "業務名:作業名" の複合キーで引く。
+// その他の業務は 業務名のみで引く。
+// どちらにもヒットしない場合は「その他」に集約。
+// ============================================================
+
+// 正規化: 空白・記号を除去して比較キーに変換（フォールバック用）
+function normStr(s) {
   return (s||'').toString().replace(/[\s\u3000\u00A0、，,。．・\-_／\/（）()【】「」]+/g,'').toLowerCase();
 }
 
-// 事前計算: 正規化キーによる索引 + 業務カテゴリの代表 top/sub
-const TASK_MAP_NORM = {};
-const BIZ_DOMINANT = {};
-(function(){
-  for(const biz in TASK_MAP){
-    const nb = normStr(biz);
-    if(!TASK_MAP_NORM[nb]) TASK_MAP_NORM[nb] = {};
-    const counts = {};
-    let firstVal = null;
-    for(const task in TASK_MAP[biz]){
-      const v = TASK_MAP[biz][task];
-      TASK_MAP_NORM[nb][normStr(task)] = v;
-      const ck = v.top+'|||'+v.sub;
-      counts[ck] = (counts[ck]||0)+1;
-      if(!firstVal) firstVal = v;
-    }
-    let best=null,bestN=0;
-    for(const k in counts){ if(counts[k]>bestN){bestN=counts[k];best=k;} }
-    if(best){
-      const parts = best.split('|||');
-      BIZ_DOMINANT[nb] = {top:parts[0], sub:parts[1], mail:''};
-    } else if(firstVal){
-      BIZ_DOMINANT[nb] = {top:firstVal.top, sub:firstVal.sub, mail:''};
-    }
+// 正規化済みMASTERインデックス（起動時1回だけ構築）
+const MASTER_NORM = (function() {
+  const idx = {};
+  for (const k in MASTER) {
+    idx[normStr(k)] = MASTER[k];
   }
+  return idx;
 })();
 
-function categorize(biz, task){
-  if(!biz) return {top:'その他', sub:'その他', mail:''};
-  // 1. 完全一致
-  if(TASK_MAP[biz] && TASK_MAP[biz][task]) return TASK_MAP[biz][task];
-  const nb = normStr(biz), nt = normStr(task);
-  // 2. 正規化キーで完全一致
-  if(TASK_MAP_NORM[nb] && TASK_MAP_NORM[nb][nt]) return TASK_MAP_NORM[nb][nt];
-  // 3. 業務カテゴリ単位で一致(作業が未登録でも、bizの代表分類を使う)
-  if(BIZ_DOMINANT[nb]) return BIZ_DOMINANT[nb];
-  // 4. 部分一致(biz名の前方・包含一致)
-  if(nb.length>=2){
-    for(const k in BIZ_DOMINANT){
-      if(k.length>=2 && (nb.indexOf(k)>=0 || k.indexOf(nb)>=0)){
-        return BIZ_DOMINANT[k];
-      }
-    }
-  }
+function categorize(biz, task) {
+  if (!biz) return { top: 'その他', sub: 'その他', mail: '' };
+
+  // 1. 複合キー完全一致（SCSKメール運用の作業名ベースルール）
+  const compositeKey = biz + ':' + (task || '');
+  if (MASTER[compositeKey]) return MASTER[compositeKey];
+
+  // 2. 複合キー正規化一致
+  const normComposite = normStr(compositeKey);
+  if (MASTER_NORM[normComposite]) return MASTER_NORM[normComposite];
+
+  // 3. 業務カテゴリ単位の一致
+  if (MASTER[biz]) return MASTER[biz];
+
+  // 4. 業務カテゴリ正規化一致
+  const normBiz = normStr(biz);
+  if (MASTER_NORM[normBiz]) return MASTER_NORM[normBiz];
+
   // 5. その他に集約
-  return {top:'その他', sub:'その他', mail:''};
+  return { top: 'その他', sub: 'その他', mail: '' };
+}
+
+// ============================================================
+// normalizeTask — Tab9「1メール当たり工数」集計用
+// MASTER の mail フィールドを返す。
+// 登録外の作業名はフォールバックロジックで対応。
+// ============================================================
+function normalizeTask(task, biz) {
+  biz = biz || 'SCSKメール運用';
+  const compositeKey = biz + ':' + (task || '');
+
+  // 1. 複合キー完全一致
+  if (MASTER[compositeKey] && MASTER[compositeKey].mail) return MASTER[compositeKey].mail;
+
+  // 2. 複合キー正規化一致
+  const normKey = normStr(compositeKey);
+  if (MASTER_NORM[normKey] && MASTER_NORM[normKey].mail) return MASTER_NORM[normKey].mail;
+
+  // 3. 登録外作業名のフォールバック（マスタ未登録の作業が来た場合の保険）
+  if (task.includes('【企画本部】')) return '予備メルマガ作成';
+  task = task.replace('【イレギュラー対応】', '').trim();
+  if (task.includes('テスト送付') || task.includes('修正対応')) return 'メールテンプレート作成';
+  return task;
 }
 let charts={};
-const COLORS=['#1a237e','#283593','#3949ab','#5c6bc0','#7986cb','#9fa8da',
-'#ff6f00','#ff8f00','#ffa000','#43a047','#66bb6a','#26a69a','#ec407a','#ab47bc','#5c6bc0','#78909c'];
-const WORKER_COLORS=['#1a237e','#ff6f00','#2e7d32','#c62828','#6a1b9a','#00838f','#4e342e','#d81b60'];
+const COLORS=['#0ea5e9','#38bdf8','#7dd3fc','#059669','#34d399','#6ee7b7',
+'#f59e0b','#fbbf24','#fcd34d','#8b5cf6','#a78bfa','#c4b5fd','#ec4899','#f472b6','#64748b','#94a3b8'];
+const WORKER_COLORS=['#0ea5e9','#059669','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1'];
 
 function makeChart(id,cfg){if(charts[id])charts[id].destroy();const ctx=document.getElementById(id);if(!ctx)return null;charts[id]=new Chart(ctx,cfg);return charts[id];}
 
@@ -821,6 +689,8 @@ document.getElementById('tabBar').addEventListener('click',e=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');document.getElementById('panel'+idx).classList.add('active');
+  const TITLES={'0':'Excel 読込','1':'日次集計','2':'月次集計','3':'個人分析','4':'業務別分析','5':'予実管理','6':'タスク管理','7':'設定','8':'月次推移','9':'レポート転記'};
+  const titleEl=document.getElementById('topbarTitle');if(titleEl)titleEl.textContent=TITLES[idx]||'';
   if(G.loaded)renderTab(+idx);
 });
 function renderTab(i){switch(i){case 1:renderDaily();break;case 2:renderMonthly();break;case 3:renderPersonal();break;
@@ -1037,7 +907,7 @@ function renderDaily(){const d=document.getElementById('fDate')?.value||'',w=doc
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
   let t='<table><tr><th>作業者</th><th>業務</th><th>作業</th><th>時間(h)</th><th>備考</th></tr>';
   entries.forEach(e=>{t+=`<tr><td>${e.worker}</td><td style="text-align:left">${e.biz}</td><td style="text-align:left">${e.task}</td><td>${e.hours.toFixed(2)}</td><td style="text-align:left;font-size:11px">${e.note}</td></tr>`;});
-  t+=`<tr style="font-weight:700;background:#e8eaf6"><td colspan="3">合計</td><td>${th.toFixed(2)}</td><td></td></tr></table>`;
+  t+=`<tr style="font-weight:700;background:var(--bg);border-top:2px solid var(--border)"><td colspan="3">合計</td><td>${th.toFixed(2)}</td><td></td></tr></table>`;
   document.getElementById('dailyTable').innerHTML=t;}
 
 function renderMonthly(){const m=document.getElementById('fMonth')?.value||getMonths().pop()||'';
@@ -1076,7 +946,7 @@ function renderMonthly(){const m=document.getElementById('fMonth')?.value||getMo
       const subD=(r.top!==prevTop||r.sub!==prevSub)?r.sub:'';
       const bizD=(r.top!==prevTop||r.sub!==prevSub||r.biz!==prevBiz)?r.biz:'';
       prevTop=r.top;prevSub=r.sub;prevBiz=r.biz;
-      bt+=`<tr><td style="text-align:left;font-weight:${topD?'600':'400'};color:${topD?'var(--primary)':'#aaa'}">${topD||'\u3000'}</td>`+
+      bt+=`<tr><td style="text-align:left;font-weight:${topD?'600':'400'};color:${topD?'var(--accent-d)':'var(--text3)'}">${topD||'\u3000'}</td>`+
           `<td style="text-align:left;color:${subD?'#333':'#aaa'}">${subD||'\u3000'}</td>`+
           `<td style="text-align:left;color:${bizD?'#333':'#aaa'}">${bizD||'\u3000'}</td>`+
           `<td style="text-align:left">${r.task}</td>`+
@@ -1088,7 +958,7 @@ function renderMonthly(){const m=document.getElementById('fMonth')?.value||getMo
     Object.entries(topTotals).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
       summary+=`<tr><td style="text-align:left;font-weight:600">${k}</td><td>${v.toFixed(2)}</td><td>${pct(v,th)}</td></tr>`;
     });
-    summary+=`<tr style="font-weight:700;background:#e8eaf6"><td>合計</td><td>${th.toFixed(2)}</td><td>100.0%</td></tr></table>`;
+    summary+=`<tr style="font-weight:700;background:var(--bg);border-top:2px solid var(--border)"><td>合計</td><td>${th.toFixed(2)}</td><td>100.0%</td></tr></table>`;
     document.getElementById('monthlyBreakdownTable').innerHTML=summary+bt;
   }
   const byDate=grp(entries,e=>e.date);
@@ -1174,7 +1044,7 @@ function renderPV(){
   const catData=allCats.map(c=>{const plan=planM[c]||0;const actual=sum((byB[c]||[]).map(e=>e.hours));
     return{cat:c,plan,actual,variance:plan-actual,rate:plan?actual/plan:0};}).sort((a,b)=>b.plan-a.plan);
   makeChart('pvBar',{type:'bar',data:{labels:catData.map(d=>d.cat),
-    datasets:[{label:'予定(h)',data:catData.map(d=>d.plan),backgroundColor:'#3949ab'},
+    datasets:[{label:'予定(h)',data:catData.map(d=>d.plan),backgroundColor:'#0ea5e9'},
       {label:'実績(h)',data:catData.map(d=>d.actual),backgroundColor:'#ff8f00'}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
     scales:{x:{beginAtZero:true,title:{display:true,text:'時間(h)'}}},plugins:{legend:{position:'top'}}}});
@@ -1188,7 +1058,7 @@ function renderPV(){
     t+=`<tr><td style="text-align:left;font-weight:600">${d.cat}</td><td>${d.plan.toFixed(2)}</td><td>${d.actual.toFixed(2)}</td>
       <td style="${varCls}">${d.variance.toFixed(2)}</td><td>${d.plan?pct(d.actual,d.plan):'—'}</td>
       <td><div class="bar"><div class="bar-fill ${cls}" style="width:${Math.min(barPct,100)}%"></div></div></td></tr>`;});
-  t+=`<tr style="font-weight:700;background:#e8eaf6"><td>合計</td><td>${totalPlan.toFixed(2)}</td><td>${totalActual.toFixed(2)}</td>
+  t+=`<tr style="font-weight:700;background:var(--bg);border-top:2px solid var(--border)"><td>合計</td><td>${totalPlan.toFixed(2)}</td><td>${totalActual.toFixed(2)}</td>
     <td style="${diff<0?'color:var(--danger)':''}">${diff.toFixed(2)}</td><td>${pct(totalActual,totalPlan)}</td><td></td></tr></table>`;
   document.getElementById('pvTable').innerHTML=t;
   const planTM=G.planTask[m]||{};const byBT=grp(entries,e=>e.biz+'|||'+e.task);
@@ -1215,10 +1085,10 @@ function renderTask(){const m=document.getElementById('fMonthTask')?.value||getM
   Object.entries(byB).sort((a,b)=>sum(b[1].map(e=>e.hours))-sum(a[1].map(e=>e.hours))).forEach(([biz,es])=>{
     mt+=`<tr><td style="text-align:left;font-weight:600">${biz}</td>`;let rt=0;
     ws.forEach(w=>{const h=sum(es.filter(e=>e.worker===w).map(e=>e.hours));rt+=h;
-      const bg=h>0?`background:rgba(26,35,126,${Math.min(h/20,.3).toFixed(2)})`:'';
+      const bg=h>0?`background:rgba(14,165,233,${Math.min(h/20,.35).toFixed(2)})`:'';
       mt+=`<td style="${bg}">${h?h.toFixed(2):''}</td>`;});
     mt+=`<td style="font-weight:700">${rt.toFixed(2)}</td></tr>`;});
-  mt+='<tr style="font-weight:700;background:#e8eaf6"><td>合計</td>';let gt=0;
+  mt+='<tr style="font-weight:700;background:var(--bg);border-top:2px solid var(--border)"><td>合計</td>';let gt=0;
   ws.forEach(w=>{const h=sum(entries.filter(e=>e.worker===w).map(e=>e.hours));gt+=h;mt+=`<td>${h.toFixed(2)}</td>`;});
   mt+=`<td>${gt.toFixed(2)}</td></tr></table>`;document.getElementById('taskMatrix').innerHTML=mt;}
 
@@ -1302,7 +1172,7 @@ function renderMonthlyReport(){
     h+='<tr style="background:#d6e4f0;font-weight:700"><td style="text-align:left">'+g.cat+'</td><td style="text-align:center">小計</td>';
     var cs2=0;fyM.forEach(function(mm){var ms=0;show.forEach(function(s){ms+=D[g.cat][s][mm]||0;});cs2+=ms;
       h+='<td>'+(ms?ms.toFixed(2):'')+'</td>';});h+='<td>'+(cs2?cs2.toFixed(2):'')+'</td></tr>';});
-  h+='<tr style="background:var(--primary);color:#fff;font-weight:700"><td colspan="2">合計</td>';
+  h+='<tr style="background:var(--bg);color:var(--text);font-weight:700;border-top:2px solid var(--border)"><td colspan="2">合計</td>';
   fyM.forEach(function(mm){h+='<td>'+(mT[mm]?mT[mm].toFixed(2):'')+'</td>';});h+='<td>'+gT.toFixed(2)+'</td></tr>';
   h+='<tr style="background:#f5f5f5;font-weight:600"><td colspan="2">契約工数</td>';
   fyM.forEach(function(){h+='<td>'+ct+'</td>';});h+='<td>'+aC+'</td></tr>';
@@ -1322,7 +1192,7 @@ function renderMonthlyReport(){
   var mContract=fyM.map(function(){return ct;});
   makeChart('mrLineChart',{type:'line',
     data:{labels:fyL,datasets:[
-      {label:'実績工数',data:mActual,borderColor:'#1a237e',backgroundColor:'rgba(26,35,126,.1)',fill:true,tension:.3,pointRadius:5,pointBackgroundColor:'#1a237e'},
+      {label:'実績工数',data:mActual,borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,.1)',fill:true,tension:.3,pointRadius:5,pointBackgroundColor:'#0ea5e9'},
       {label:'契約工数',data:mContract,borderColor:'#ff6f00',borderDash:[8,4],pointRadius:0,fill:false}]},
     options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'時間(h)'}}},
       plugins:{legend:{position:'top'},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y.toFixed(2)+'h'}}}}}});
@@ -1421,10 +1291,10 @@ var totalActual = entries.reduce((s,e)=>s+e.hours,0);
 
 
   // Build table
-  var catStyle='background:var(--primary);color:#fff;font-weight:700;text-align:left;padding:10px 12px;vertical-align:top;border:1px solid #ccc';
+  var catStyle='background:var(--bg);color:var(--text);font-weight:700;text-align:left;padding:10px 12px;vertical-align:top;border-top:2px solid var(--border);border:1px solid #ccc';
   var tdStyle='padding:8px 12px;border:1px solid #ddd;text-align:left';
   var numStyle='padding:8px 12px;border:1px solid #ddd;text-align:right;font-weight:500';
-  var totalStyle='background:var(--primary);color:#fff;font-weight:700;padding:10px 12px;border:1px solid #ccc';
+  var totalStyle='background:var(--bg);color:var(--text);font-weight:800;padding:10px 12px;border-top:2px solid var(--border)';
 
   var t='<table style="border-collapse:collapse;width:100%">';
   t+='<tr><th colspan="2" style="min-width:280px">'+mLabel+'</th><th>タスク</th><th colspan="2">作業時間(h)</th></tr>';
@@ -1508,22 +1378,7 @@ setTimeout(function(){
 
 
 
-function normalizeTask(task, biz){
-  biz = biz || 'SCSKメール運用';
-  if(TASK_MAP[biz] && TASK_MAP[biz][task] && TASK_MAP[biz][task].mail){
-    return TASK_MAP[biz][task].mail;
-  }
-  const nb=normStr(biz), nt=normStr(task);
-  if(TASK_MAP_NORM[nb] && TASK_MAP_NORM[nb][nt] && TASK_MAP_NORM[nb][nt].mail){
-    return TASK_MAP_NORM[nb][nt].mail;
-  }
-  if(task.includes('【企画本部】')) return '予備メルマガ作成';
-  task = task.replace('【イレギュラー対応】','');
-  task = task.trim();
-  if(task.includes('テスト送付')) return 'メールテンプレート作成';
-  if(task.includes('修正対応')) return 'メールテンプレート作成';
-  return task;
-}
+
 // 1メール工数テーブル
 function renderPerMailTable(month){
 
@@ -1558,7 +1413,7 @@ function renderPerMailTable(month){
 
 
   entries.forEach(e=>{
-    const nt = normalizeTask(e.task, e.biz);  // ← 正規化(TASK_MAP使用)
+    const nt = normalizeTask(e.task, e.biz);
     taskHours[nt] = (taskHours[nt] || 0) + e.hours;
   });
 
