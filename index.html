@@ -3,19 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SCSK-DMP 日報ダッシュボード v8.3</title>
+<title>SCSK-DMP 日報ダッシュボード</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-// XSS対策用：特殊文字を無害化する関数
-function escapeHTML(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+
 <style>
 :root {
   --bg:       #f8f9fb;
@@ -562,6 +553,17 @@ button {
 
 
 <script>
+// XSS対策用：特殊文字を無害化する関数
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Global State (identical to v7.2)
 let G={entries:[],master:{},workers:[],settings:{},plan:{},planTask:{},deliveryCounts:{},loaded:false};
 
@@ -748,16 +750,15 @@ else {
 }
 
 
-  return {
+return {
     date: dt,
-    worker: String(r['作業者'] || ''),
-    biz: String(r['業務'] || ''),
-    task: String(r['作業'] || ''),
-    note: String(r['備考'] || r['備考（スポットやイレギュラータスク発生時に内容記載）'] || ''),
+    // ↓エスケープ関数を通すように変更
+    worker: escapeHTML(String(r['作業者'] || '')),
+    biz: escapeHTML(String(r['業務'] || '')),
+    task: escapeHTML(String(r['作業'] || '')),
+    note: escapeHTML(String(r['備考'] || r['備考（スポットやイレギュラータスク発生時に内容記載）'] || '')),
+    // 作業時間は数値なのでそのままでOK
     hours: parseFloat(r['作業時間(h)'] || r['作業時間'] || 0) || 0,
-
-    
-    
   };
 
 }).filter(e=>{
